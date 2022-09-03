@@ -87,11 +87,13 @@ public abstract class AbstractEncoder extends AbstractCoder {
 		// Hamming code
 		if(isSecdedEnabled()) {
 			signalBinEncoded = new boolean[signalBin.length * 2];
+			int pos = 0;
 			for (int i = 3; i < signalBin.length; i += 4) {
 				boolean[] oneByte = Arrays.copyOfRange(signalBin, i - 3, i + 1);
 				boolean[] oneByteEncoded = UltrasoundHelper.encHamming(oneByte);
-				for (int j = 0; j < 4; j++) {
-					signalBinEncoded[i + j] = oneByteEncoded[j];
+				for (int j = 0; j < 8; j++) {
+					signalBinEncoded[pos] = oneByteEncoded[j];
+					pos++;
 				}
 			}
 		} else {

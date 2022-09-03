@@ -209,7 +209,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
         //If found searched frequencies on all channels
         if (valFound && valChanged && breakInd) {
 
-        	saveToFile("frag",frag );
+        	//saveToFile("frag",frag );
             boolean[] resBin = null;
 
             for (int j = 0; j < noOfChannels; j++) {
