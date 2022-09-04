@@ -77,6 +77,8 @@ public abstract class AbstractCoder {
 
 		}
     }
+    
+    protected abstract void logMessage(String message);
 
 	/**
 	 * Get the sample rate used in encoder/decoder
