@@ -93,6 +93,17 @@ public class UltrasoundHelper {
         return binStr;
     }
     
+    public static boolean[] byte2bin(byte[] data) {
+    	boolean[] binArray = new boolean[data.length * Byte.SIZE];
+    	int pos = 0;
+		for (int i = 0; i < data.length; i++) {
+			for (int j = Byte.SIZE - 1; j >= 0 ; j--, pos++) {
+				binArray[pos] = (data[i] & 0xFF & (1 << j)) != 0;
+			}
+		}
+    	return binArray;
+    }
+    
     
     public static short[] sumShortArrays(short[] arrA, short[] arrB) {
     	

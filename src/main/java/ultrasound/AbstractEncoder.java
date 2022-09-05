@@ -224,11 +224,8 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 	 */
 	private void validateHexData() throws InvalidAlgorithmParameterException {
 		if (hexData != null && !hexData.isBlank()) {
-
-			try {
-				Integer.parseInt(hexData, 16);
-			} catch (NumberFormatException e) {
-				throw new InvalidAlgorithmParameterException("Hex data contains invalid characters!", e);
+			if(!hexData.matches("-?[0-9a-fA-F]+")) {
+				throw new InvalidAlgorithmParameterException("Hex data contains invalid characters!");
 			}
 		} else {
 			throw new InvalidAlgorithmParameterException("Hex data can not be empty!");
