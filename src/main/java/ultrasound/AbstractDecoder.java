@@ -238,7 +238,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 		
 	}
 	
-	private void clearReceivedDataBuffers() {
+	public void clearReceivedDataBuffers() {
 		receivedHexMsg = null;
 		resByte.reset();
 		
