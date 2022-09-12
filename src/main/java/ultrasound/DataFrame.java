@@ -6,6 +6,43 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+
+/**
+ * Data frame model for Ultrasound Transmission
+ * 
+ * There are two basic types of data frame:
+ * <ol>
+ * <li>Command frame - for sending a control command to a device</li>
+ * <li>Data frame - for sending data to a device</li>
+ * </ol>
+ * 
+ * <pre>
+ * 1) Command frame
+ *  -------------------------------------------------------------------------------------------------------
+ * |         SOH        |  Receiver address  |       Command      |      Checksum      |         EOT        | 
+ *  -------------------------------------------------------------------------------------------------------
+ *  1                    2                    3                    4                    5
+ *  
+ * 2) Data frame
+ *  --------------------------------------------------------------------------------------------------------------------------------------------------
+ * |         SOH        |  Receiver address  |         STX        |         Data        -      Padding      |     Checksum       |         EOT        | 
+ *  --------------------------------------------------------------------------------------------------------------------------------------------------
+ *  1                    2                    3                    4-n                                       n-1                  n
+ * </pre>
+ * <ul>
+ * <li>Receiver address: Address of device which should receive transmission -
+ * values from 0 to 126. Address 127 is reserved for broadcast
+ * transmission.</li>
+ * <li>Command: One byte ASCII command. For the list of commands see
+ * {@link ControlCodes}</li>
+ * <li>Data: data to transmit maximum length is defined by constant
+ * {@link DataFrame#MAX_MESSAGE_SIZE} (in diagram as 'n'). Data will be
+ * automatically padded with nulls to get correct frame length.</li>
+ * </ul>
+ * 
+ * @author M.Sadowski
+ *
+ */
 public class DataFrame {
 
 	public static final int MAX_MESSAGE_SIZE = Byte.MAX_VALUE;
@@ -46,11 +83,6 @@ public class DataFrame {
 
 		outputStream.write(ControlCodes.EOT);
 
-		/*
-		 * 6B = 48b = min. size
-		 * 
-		 * 
-		 */
 	}
 
 	public static class DataFrameBuilder {
