@@ -154,6 +154,14 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 		closeRecorder();
 	}
 	
+	public void clearReceivedDataBuffers() {
+		
+		resHex = null;
+		sigBin = null;
+		sigBinDec = null;
+		
+	}
+	
 	public void stopRecording() {
 		logMessage("Decoder stopped!");
 		isRunning = false;
