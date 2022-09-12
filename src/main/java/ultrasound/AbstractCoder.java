@@ -14,6 +14,9 @@ public abstract class AbstractCoder {
     protected int[][] freq;
     protected boolean secdedEnabled = true;
 	protected double tOnePulse;
+	
+	protected CoderMode mode;
+	protected DataFrame frame;
 
     /**
      * Constructor for a new abstract encoder/decoder object
@@ -27,6 +30,7 @@ public abstract class AbstractCoder {
         this.noOfChannels = builder.noOfChannels;
         this.firstFreq = builder.firstFreq;
         this.freqStep = builder.freqStep;
+        this.mode = builder.mode;
         
         if(builder.secdedEnabled != null) {
         	this.secdedEnabled = builder.secdedEnabled;
@@ -45,6 +49,11 @@ public abstract class AbstractCoder {
         }
     }
     
+    public enum CoderMode {
+    	SIMPLE,
+    	DATA_FRAME
+    }
+    
     public abstract static class AbstractCoderBuilder {
     	
     	private final int sampleRate;
@@ -53,16 +62,23 @@ public abstract class AbstractCoder {
     	private final int freqStep;
     	private Boolean secdedEnabled;
 		private double tOnePulse;
-    	
+		private CoderMode mode;
+		
     	public AbstractCoderBuilder(int sampleRate, int noOfChannels, int firstFreq, int freqStep) {
     		this.sampleRate = sampleRate;
     		 this.noOfChannels = noOfChannels;
     	     this.firstFreq = firstFreq;
     	     this.freqStep = freqStep;
+    	     this.mode = AbstractCoder.CoderMode.SIMPLE;
     	}
     	
 		public AbstractCoderBuilder tOnePulse(double tOnePulse) {
 			this.tOnePulse = tOnePulse;
+			return this;
+		}
+		
+		public AbstractCoderBuilder mode(CoderMode mode) {
+			this.mode = mode;
 			return this;
 		}
     	
@@ -91,6 +107,10 @@ public abstract class AbstractCoder {
 	
 	public boolean isSecdedEnabled() {
 		return secdedEnabled;
+	}
+	
+	public CoderMode getMode() {
+		return mode;
 	}
 
 }
