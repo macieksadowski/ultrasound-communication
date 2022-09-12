@@ -93,6 +93,57 @@ public class UltrasoundHelper {
         return binStr;
     }
     
+    public static boolean[] byte2bin(byte[] data) {
+    	boolean[] binArray = new boolean[data.length * Byte.SIZE];
+    	int pos = 0;
+		for (int i = 0; i < data.length; i++) {
+			for (int j = Byte.SIZE - 1; j >= 0 ; j--, pos++) {
+				binArray[pos] = (data[i] & 0xFF & (1 << j)) != 0;
+			}
+		}
+    	return binArray;
+    }
+    
+    public static byte[] bin2byte(boolean[] data) {
+    	if(data.length % 8 != 0) {
+    		throw new IllegalArgumentException("Bin array length mismatch! " + binStrFromBinArray(data));
+    	}
+    	byte[] byteArr = new byte[data.length / Byte.SIZE];
+    	int pos = 0;
+    	for (int i = 0; i < byteArr.length; i++, pos += Byte.SIZE) {
+    		boolean[] b = Arrays.copyOfRange(data, pos, pos + Byte.SIZE);
+    		int val = Integer.parseInt(binStrFromBinArray(b),2);
+    		byteArr[i] = (byte) val;
+		}	
+    	return byteArr;
+    }
+    
+    public static String bytesToHex(byte[] bytes) {
+    	StringBuilder result = new StringBuilder();
+        for (byte i : bytes) {
+            int decimal = (int)i & 0XFF;
+            String hex = Integer.toHexString(decimal);
+  
+            if (hex.length() % 2 == 1) {
+                hex = "0" + hex;
+            }
+  
+            result.append(hex);
+        }
+        return result.toString();
+    }
+    
+    public static String byteToHex(byte b) {
+
+    	int decimal = (int)b & 0XFF;
+        String hex = Integer.toHexString(decimal);
+
+        if (hex.length() % 2 == 1) {
+            hex = "0" + hex;
+        }
+        return hex;
+    }
+    
     
     public static short[] sumShortArrays(short[] arrA, short[] arrB) {
     	
