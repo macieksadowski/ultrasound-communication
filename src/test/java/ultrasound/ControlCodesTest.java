@@ -13,4 +13,11 @@ public class ControlCodesTest {
         String controlCodeName = "ACK";
         assertEquals(controlCodeName, ControlCodes.getCodeNameByValue(controlCode));
     }
+    
+    @Test
+    public void getCodeByName() {
+        byte controlCode = ControlCodes.ACK;
+        String controlCodeName = "ACK";
+        assertEquals(controlCode, ControlCodes.getCodeByName(controlCodeName).byteValue());
+    }
 }
