@@ -1,7 +1,5 @@
 package ultrasound;
 
-import ultrasound.AbstractEncoder.AbstractEncoderBuilder;
-
 /**
  * Abstract class contains common fields used both in decoder and encoder
  */

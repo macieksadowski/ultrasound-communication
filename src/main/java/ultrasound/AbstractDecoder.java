@@ -207,19 +207,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 				}
 				
 				if(frame.getChecksum() == checksum) {
-					logMessage("Data frame received successfully");
-					
-					String receiverAddress = null;
-					if (address == DataFrame.BROADCAST_ADDRESS) {
-						receiverAddress = "BROADCAST";
-					} else {
-						receiverAddress = UltrasoundHelper.byteToHex(address);
-					}
-					logMessage("Receiver address: " + receiverAddress);
-					
-					logMessage("Command: " + ControlCodes.getCodeNameByValue(command));
-					
-					logMessage("Data: " +  new String(dataStr.toByteArray()));
+					onDataFrameSuccessfullyReceived(address, command, dataStr.toByteArray());
 				}
 				
 			} catch (Exception e) {
@@ -237,6 +225,28 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 		
 		
 	}
+
+	/**
+	 * @param address
+	 * @param command
+	 * @param dataStr
+	 */
+	private void onDataFrameSuccessfullyReceived(byte address, byte command, byte[] dataStr) {
+		logMessage("Data frame received successfully");
+		
+		String receiverAddress = null;
+		if (address == DataFrame.BROADCAST_ADDRESS) {
+			receiverAddress = "BROADCAST";
+		} else {
+			receiverAddress = UltrasoundHelper.byteToHex(address);
+		}
+		logMessage("Receiver address: " + receiverAddress);
+		
+		logMessage("Command: " + ControlCodes.getCodeNameByValue(command));
+		
+		logMessage("Data: " +  new String(dataStr));
+	}
+	
 	
 	public void clearReceivedDataBuffers() {
 		receivedHexMsg = null;
