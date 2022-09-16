@@ -4,9 +4,13 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import ultrasound.UltrasoundHelper;
 
+@RunWith(JUnitParamsRunner.class)
 public class UltrasoundHelperTest {
 
     @Test(expected = IllegalArgumentException.class)
@@ -152,6 +156,35 @@ public class UltrasoundHelperTest {
         assertArrayEquals(actual,expected);
 
     }
-
+    
+    @Test
+    @Parameters(method = "parametersToTestByte2Bin")
+    public void byte2bin(byte[] given, String expectedStr) {
+    	boolean[] expected = UltrasoundHelper.binArrayFromBinStr(UltrasoundHelper.hex2bin(expectedStr));
+    	
+    	assertArrayEquals(UltrasoundHelper.byte2bin(given), expected);
+    	
+    }
+    
+    @SuppressWarnings("unused")
+	private Object[] parametersToTestByte2Bin() {
+		return new Object[] {
+			new Object[] {new byte[] { (byte) 0xFF }, "FF"},
+			new Object[] {new byte[] { (byte) 0x4D }, "4d"},
+			new Object[] {new byte[] { (byte) 0x10 }, "10"},
+			new Object[] {new byte[] { (byte) 0x37 }, "37"},
+		};
+    	
+    }
+    
+    @Test
+    @Parameters(method = "parametersToTestByte2Bin")
+    public void bin2byte(byte[] expected, String given) {
+    	boolean[] givenArr = UltrasoundHelper.binArrayFromBinStr(UltrasoundHelper.hex2bin(given));
+    	
+    	
+    	assertArrayEquals(UltrasoundHelper.bin2byte(givenArr),expected);
+    	
+    }
 
 }

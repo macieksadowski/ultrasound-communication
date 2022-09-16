@@ -1,11 +1,15 @@
 package ultrasound;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import sw.FFT;
+import ultrasound.DataFrame.DataFrameBuilder;
 
 /**
  *
@@ -37,9 +41,16 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 	protected short[] recordFrag;
 	protected double[] t;
 
-	protected String resHex;
+	protected String receivedHexMsg;
+	protected ByteArrayOutputStream resByte;
+	
 	protected boolean[] sigBin = null;
 	protected boolean[] sigBinDec = null;
+
+	private boolean endOfTransmission = false;
+	
+	protected ArrayList<DataFrame> dataFrames;
+
 
 	/**
 	 * Constructor for a new abstract decoder object
@@ -86,6 +97,10 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 		for (int i_f = 0; i_f < f.length; i_f++) {
 			f[i_f] = (double) ((lowestAnalyseFreqInd + i_f) * sampleRate) / nfft;
 		}
+		
+		this.resByte = new ByteArrayOutputStream();
+		
+		this.dataFrames = new ArrayList<DataFrame>();
 
 	}
 
@@ -138,6 +153,14 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 				watch.start();
 				decode();
 				watch.stop();
+		
+				if(endOfTransmission) {
+					logMessage("End of frame byte received");
+					parseDataFrame();
+					clearReceivedDataBuffers();
+					
+				}
+				
 				// if(this.sigBin != null)
 				// logMessage("Data length: " + N + ", execution time: " + watch.getTime());
 				watch.reset();
@@ -147,19 +170,91 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 				logMessage(e.toString());
 				e.printStackTrace();
 				stopRecording();
-				return;
+				break;
 			}
 		}
-
+		
 		closeRecorder();
 	}
+
+public void clearReceivedDataBuffers() {
+	receivedHexMsg = null;
+	resByte.reset();
 	
-	public void clearReceivedDataBuffers() {
+	sigBin = null;
+	sigBinDec = null;
+	
+	endOfTransmission = false;
+}
+
+	private void parseDataFrame() {
+		byte[] resByteArr = resByte.toByteArray();
+		boolean startByteFound = resByteArr[0] == ControlCodes.SOH;
+		if(startByteFound) {
+			byte address = resByteArr[1];
+			byte command = resByteArr[2];
+			
+			DataFrameBuilder builder = new DataFrameBuilder(address, noOfChannels);
+			builder.command(command);
+			
+			int pos = 3;
+			ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
+			if(command == ControlCodes.STX) {
+				
+				for (; pos < resByteArr.length; pos++) {
+					if(resByteArr[pos] == ControlCodes.ETX)
+						break;
+					dataStr.write(resByteArr[pos]);
+				}
+				builder.data(dataStr.toByteArray());
+			}
+			byte checksum = resByteArr[resByteArr.length - 2];
+			
+			try {
+				DataFrame frame = builder.build();
+				if(frame == null) {
+					throw new Exception("Invalid data frame!");
+				}
+				
+				if(frame.getChecksum() == checksum) {
+					onDataFrameSuccessfullyReceived(address, command, dataStr.toByteArray());
+				}
+				
+			} catch (Exception e) {
+				logMessage(e.toString());
+				e.printStackTrace();
+			}
+			
+			
+			
+			
+			
+			
+			
+		}
 		
-		resHex = null;
-		sigBin = null;
-		sigBinDec = null;
 		
+	}
+
+	/**
+	 * @param address
+	 * @param command
+	 * @param dataStr
+	 */
+	private void onDataFrameSuccessfullyReceived(byte address, byte command, byte[] dataStr) {
+		logMessage("Data frame received successfully");
+		
+		String receiverAddress = null;
+		if (address == DataFrame.BROADCAST_ADDRESS) {
+			receiverAddress = "BROADCAST";
+		} else {
+			receiverAddress = UltrasoundHelper.byteToHex(address);
+		}
+		logMessage("Receiver address: " + receiverAddress);
+		
+		logMessage("Command: " + ControlCodes.getCodeNameByValue(command));
+		
+		logMessage("Data: " +  new String(dataStr));
 	}
 	
 	public void stopRecording() {
@@ -180,9 +275,10 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 	protected abstract short[] getAudioSamples() throws Exception;
 
 	/**
+	 * @throws Exception 
 	*
 	*/
-	private void decode() {
+	private void decode() throws Exception {
 
 		double[] frag = new double[N];
 
@@ -274,35 +370,55 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 				}
 			}
 
-			if (resBin != null && resBin.length == noOfChannels) {
+			if (resBin != null && resBin.length % noOfChannels == 0 && resBin.length % 16 == 0) {
+				
+				boolean[] resBinDec = null;
 				sigBin = ArrayUtils.addAll(sigBin, resBin);
 
 				if (isSecdedEnabled()) {
-					if (sigBin.length % 8 == 0) {
-						try {
-							for (int ii = 8; ii <= sigBin.length; ii += 8) {
-								boolean[] encoded4th = Arrays.copyOfRange(sigBin, ii - 8, ii);
-								sigBinDec = ArrayUtils.addAll(sigBinDec, UltrasoundHelper.secded(encoded4th));
-							}
+					try {
+						for (int ii = 8; ii <= resBin.length; ii += 8) {
+							boolean[] encoded4th = Arrays.copyOfRange(resBin, ii - 8, ii);
+							resBinDec = ArrayUtils.addAll(resBinDec, UltrasoundHelper.secded(encoded4th));
+						}
+					} catch (Exception e) {
+						logMessage(e.getMessage());
+						clearReceivedDataBuffers();
+						return;
+					}
+					
+				} else {
+					resBinDec = ArrayUtils.clone(resBin);
+				}
+				
+				sigBinDec = ArrayUtils.addAll(sigBinDec, resBinDec);
+				
+				logMessage("Decoded data binary: " + UltrasoundHelper.binStrFromBinArray(sigBinDec));
 
-						} catch (Exception e) {
-
+				char[] resHex = UltrasoundHelper.bin2hex(resBinDec).toCharArray();
+				
+				switch (mode) {
+				case SIMPLE: {
+					receivedHexMsg += resHex;
+					logMessage("Decoded data: " + receivedHexMsg);
+					break;
+				}
+				case DATA_FRAME: {
+					
+					byte[] res = UltrasoundHelper.bin2byte(resBinDec);
+					for(int i=0;i<res.length;i++) {
+						if(res[i] == ControlCodes.EOT) {
+							endOfTransmission = true;
 						}
 					}
-				} else {
-					sigBinDec = ArrayUtils.clone(sigBin);
-				}
+					resByte.write(res);
+					
 
+				}
+				}
+				
 				breakInd = false;
-				if (sigBinDec != null && sigBinDec.length % 4 == 0) {
-
-					resHex = UltrasoundHelper.bin2hex(sigBinDec);
-					logMessage("Decoded data binary: " + UltrasoundHelper.binStrFromBinArray(sigBinDec));
-					sigBinDec = null;
-
-					logMessage("Decoded data: " + resHex);
-
-				}
+				
 			}
 
 		}
@@ -311,7 +427,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 	/* GETTERS AND SETTERS */
 
 	public String getResHex() {
-		return resHex;
+		return receivedHexMsg;
 	}
 
 	public int getNfft() {
