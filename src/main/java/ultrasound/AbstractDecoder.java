@@ -1,46 +1,46 @@
 package ultrasound;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.time.StopWatch;
 
 import sw.FFT;
-import ultrasound.DataFrame.DataFrameBuilder;
+import ultrasound.dataframe.ControlCodes;
+import ultrasound.dataframe.DataFrame;
+import ultrasound.dataframe.DataFrame.DataFrameBuilder;
+import ultrasound.dataframe.IAsciiControlCodes;
+import ultrasound.dataframe.IDataFrame;
+import ultrasound.utils.UltrasoundHelper;
 
 /**
  *
  */
-public abstract class AbstractDecoder extends AbstractCoder implements Runnable {
-
-	private boolean isRunning;
+public abstract class AbstractDecoder extends AbstractCoder implements Runnable, IDecoder {
 
 	protected int nfft;
 	private final double threshold;
-
-	protected int N;
 	protected double delta_f;
+	
 	private final double[] hamming;
-
-	protected double[] vals;
-	protected double[] oldVals;
-	protected boolean breakInd;
 
 	private final FFT fft;
 
 	private final int lowestAnalyseFreqInd;
 	private final int highestAnalyseFreqInd;
 	private final int[][] freqInd;
+	
 	protected double[] f;
-
 	protected double[] ampl;
 
 	protected short[] recordFrag;
 	protected double[] t;
 
+	protected double[] vals;
+	protected double[] oldVals;
+	protected boolean breakInd;
+	
 	protected String receivedHexMsg;
 	protected ByteArrayOutputStream resByte;
 	
@@ -66,7 +66,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 	 * @param threshold    minimum amplitude of frequency to be detected as searched
 	 *                     signal
 	 */
-	public AbstractDecoder(AbstractDecoderBuilder builder) throws Exception {
+	protected AbstractDecoder(AbstractDecoderBuilder builder) throws Exception {
 
 		super(builder);
 		this.nfft = builder.nfft;
@@ -104,7 +104,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 
 	}
 
-	public static abstract class AbstractDecoderBuilder extends AbstractCoderBuilder {
+	public static abstract class AbstractDecoderBuilder extends AbstractCoderBuilder implements IDecoderBuilder {
 
 		private final int nfft;
 		private final double threshold;
@@ -117,7 +117,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 		}
 
 		@Override
-		public abstract AbstractDecoder build();
+		public abstract IDecoder build();
 
 		protected void validate() {
 			super.validate();
@@ -135,11 +135,10 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 	public void run() {
 
 		isRunning = true;
-		StopWatch watch = new StopWatch();
 
 		logMessage("Decoder started!");
 		logMessage("Sampling frequency " + sampleRate + " Hz");
-		logMessage("Frame length " + N);
+		logMessage("Frame length " + tOnePulse + "s");
 		logMessage("Frequency resolution " + delta_f + "Hz, DFT resolution " + nfft);
 		logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
 
@@ -150,9 +149,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 			try {
 				recordFrag = getAudioSamples();
 
-				watch.start();
 				decode();
-				watch.stop();
 		
 				if(endOfTransmission) {
 					logMessage("End of frame byte received");
@@ -161,10 +158,6 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 					
 				}
 				
-				// if(this.sigBin != null)
-				// logMessage("Data length: " + N + ", execution time: " + watch.getTime());
-				watch.reset();
-				// callback.updateFigures();
 
 			} catch (Exception e) {
 				logMessage(e.toString());
@@ -174,7 +167,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable 
 			}
 		}
 		
-		closeRecorder();
+		stopAudioRecorder();
 	}
 
 public void clearReceivedDataBuffers() {
@@ -189,7 +182,7 @@ public void clearReceivedDataBuffers() {
 
 	private void parseDataFrame() {
 		byte[] resByteArr = resByte.toByteArray();
-		boolean startByteFound = resByteArr[0] == ControlCodes.SOH;
+		boolean startByteFound = resByteArr[0] == IAsciiControlCodes.SOH;
 		if(startByteFound) {
 			byte address = resByteArr[1];
 			byte command = resByteArr[2];
@@ -199,10 +192,10 @@ public void clearReceivedDataBuffers() {
 			
 			int pos = 3;
 			ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
-			if(command == ControlCodes.STX) {
+			if(command == IAsciiControlCodes.STX) {
 				
 				for (; pos < resByteArr.length; pos++) {
-					if(resByteArr[pos] == ControlCodes.ETX)
+					if(resByteArr[pos] == IAsciiControlCodes.ETX)
 						break;
 					dataStr.write(resByteArr[pos]);
 				}
@@ -211,7 +204,7 @@ public void clearReceivedDataBuffers() {
 			byte checksum = resByteArr[resByteArr.length - 2];
 			
 			try {
-				DataFrame frame = builder.build();
+				IDataFrame frame = builder.build();
 				if(frame == null) {
 					throw new Exception("Invalid data frame!");
 				}
@@ -262,7 +255,7 @@ public void clearReceivedDataBuffers() {
 		isRunning = false;
 	}
 
-	protected abstract void closeRecorder();
+	protected abstract void stopAudioRecorder();
 
 	protected abstract void startRecording();
 
@@ -407,7 +400,7 @@ public void clearReceivedDataBuffers() {
 					
 					byte[] res = UltrasoundHelper.bin2byte(resBinDec);
 					for(int i=0;i<res.length;i++) {
-						if(res[i] == ControlCodes.EOT) {
+						if(res[i] == IAsciiControlCodes.EOT) {
 							endOfTransmission = true;
 						}
 					}
@@ -444,14 +437,6 @@ public void clearReceivedDataBuffers() {
 
 	public double[] getT() {
 		return t;
-	}
-
-	public Double getTOnePulse() {
-		return tOnePulse;
-	}
-
-	public boolean isRunning() {
-		return isRunning;
 	}
 
 }

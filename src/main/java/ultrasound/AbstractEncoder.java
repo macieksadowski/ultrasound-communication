@@ -5,16 +5,18 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-public abstract class AbstractEncoder extends AbstractCoder implements Runnable {
+import ultrasound.dataframe.IDataFrame;
+import ultrasound.utils.UltrasoundHelper;
+
+public abstract class AbstractEncoder extends AbstractCoder implements Runnable, IEncoder {
 
 	protected double tBreak;
+	private double fadeLength;
+	protected final short[][][] sines;
+	
 	protected String hexData = "";
 	
-	protected int N;
-	protected final short[][][] sines;
-	private boolean isTransmitting = false;
 	protected boolean[] signalBinEncoded;
-	private double fadeLength;
 	boolean[] signalBin;
 
 	/**
@@ -37,24 +39,21 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 			this.tBreak = builder.tBreak;
 		}
 
-		N = (int) Math.ceil((tOnePulse + tBreak) * sampleRate);
-		sines = new short[noOfChannels][2][N];
 		this.fadeLength = 0.05;
 		if (builder.fadeLength != 0) {
 			this.fadeLength = builder.fadeLength;
 		}
 
-		for (int i = 0; i < noOfChannels; i++) {
+		N = (int) Math.ceil((tOnePulse + tBreak) * sampleRate);
+		sines = new short[noOfChannels][2][N];
 
+		for (int i = 0; i < noOfChannels; i++) {
 			sines[i][0] = genTone(freq[i][0]);
 			sines[i][1] = genTone(freq[i][1]);
 		}
 	}
 
-	/**
-	 * Builder for new instances {@link AbstractEncoder}
-	 */
-	public static abstract class AbstractEncoderBuilder extends AbstractCoderBuilder {
+	public static abstract class AbstractEncoderBuilder extends AbstractCoderBuilder implements IEncoderBuilder {
 
 		private double tBreak;
 		private double fadeLength;
@@ -72,18 +71,18 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 			super(sampleRate, noOfChannels, firstFreq, freqStep);
 		}
 
-		public AbstractEncoderBuilder tBreak(double tBreak) {
+		public IEncoderBuilder tBreak(double tBreak) {
 			this.tBreak = tBreak;
 			return this;
 		}
 		
-		public AbstractEncoderBuilder fadeLength(double fadeLength) {
+		public IEncoderBuilder fadeLength(double fadeLength) {
 			this.fadeLength = fadeLength;
 			return this;
 		}
 
 		@Override
-		public abstract AbstractEncoder build();
+		public abstract IEncoder build();
 
 		protected void validate() {
 			super.validate();
@@ -91,14 +90,11 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 
 	}
 
-	/**
-	 * Method used to start sound transmission
-	 */
 	public void run() {
 
 		try {
 			
-			if(this.mode.equals(AbstractCoder.CoderMode.SIMPLE)) {
+			if(this.mode.equals(ICoder.CoderMode.SIMPLE)) {
 				validateHexData();
 			}
 			
@@ -111,9 +107,14 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 			closeAudioStream();
 
 			logMessage("Transmission ended.");
-			logMessage("Message: " + hexData);
-			logMessage("Bin message: " + UltrasoundHelper.binStrFromBinArray(signalBin));
-			logMessage("Bin message encoded: " + getBinaryMessageString());
+			if(mode == CoderMode.SIMPLE) {
+				logMessage("Message: " + hexData);
+			} else {
+				logMessage(frame.toString());
+			}
+			
+			logMessage("Bin message: " + getBinaryMessageString());
+			logMessage("Hex message: " + getHexMessageString());
 			logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
 			logMessage("Speed rate: " + Math.floor((double) noOfChannels / (tOnePulse + tBreak)) + "b/s");
 
@@ -135,7 +136,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 	 */
 	private void transmit() {
 
-		isTransmitting = true;
+		isRunning = true;
 		
 		switch(this.mode) {
 		case SIMPLE: {
@@ -192,7 +193,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 			playSound(curTactSig);
 
 		}
-		isTransmitting = false;
+		isRunning = false;
 	}
 
 	/**
@@ -254,55 +255,30 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 
 	}
 
-
 	/** Getters and setters */
 	
-	/**
-	 * Sets hexadecimal data to transmit. This String will be validated before transmission using method {@link AbstractEncoder#validateHexData()}
-	 * 
-	 * @param hexData hexadecimal data as String
-	 */
 	public void setHexData(String hexData) {
 		this.hexData = hexData;
 	}
 	
-	public void setDataFrame(DataFrame frame) {
+	public void setDataFrame(IDataFrame frame) {
 		this.frame = frame;
 	}
 
-	/**
-	 * This method is used to check state of the encoder.
-	 * @return {@code boolean} true if encoder is currently transmitting signal 
-	 */
-	public boolean isTransmitting() {
-		return isTransmitting;
-	}
-
-	/**
-	 * Getter method for field {@link AbstractEncoder#tBreak}
-	 * @return tBreak in seconds
-	 */
 	public Double getTBreak() {
 		return tBreak;
 	}
 
-
-	/**
-	 * Returns message to transmit as binary data.
-	 * If encoder uses SECDED encoding this message will be encoded with SECDED.
-	 * @return {@code boolean[] } array contains binary message
-	 */
 	public boolean[] getBinaryMessage() {
 		return signalBinEncoded;
 	}
 
-	/**
-	 * Returns message to transmit as binary data converted to {@code String}
-	 * If encoder uses SECDED encoding this message will be encoded with SECDED.
-	 * @return {@code String } contains binary message
-	 */
 	public String getBinaryMessageString() {
-		return UltrasoundHelper.binStrFromBinArray(signalBinEncoded);
+		return UltrasoundHelper.binStrFromBinArray(signalBin);
+	}
+
+	public String getHexMessageString() {
+		return UltrasoundHelper.bin2hex(signalBin);
 	}
 
 }

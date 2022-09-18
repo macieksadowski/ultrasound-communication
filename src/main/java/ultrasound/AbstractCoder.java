@@ -1,9 +1,11 @@
 package ultrasound;
 
+import ultrasound.dataframe.IDataFrame;
+
 /**
  * Abstract class contains common fields used both in decoder and encoder
  */
-public abstract class AbstractCoder {
+public abstract class AbstractCoder implements ICoder {
 
     protected int sampleRate;
     protected int noOfChannels;
@@ -13,8 +15,11 @@ public abstract class AbstractCoder {
     protected boolean secdedEnabled = true;
 	protected double tOnePulse;
 	
+	protected boolean isRunning;
+	protected int N;
+	
 	protected CoderMode mode;
-	protected DataFrame frame;
+	protected IDataFrame frame;
 
     /**
      * Constructor for a new abstract encoder/decoder object
@@ -47,12 +52,7 @@ public abstract class AbstractCoder {
         }
     }
     
-    public enum CoderMode {
-    	SIMPLE,
-    	DATA_FRAME
-    }
-    
-    public abstract static class AbstractCoderBuilder {
+    public abstract static class AbstractCoderBuilder implements ICoderBuilder {
     	
     	private final int sampleRate;
     	private final int noOfChannels;
@@ -67,25 +67,25 @@ public abstract class AbstractCoder {
     		 this.noOfChannels = noOfChannels;
     	     this.firstFreq = firstFreq;
     	     this.freqStep = freqStep;
-    	     this.mode = AbstractCoder.CoderMode.SIMPLE;
+    	     this.mode = ICoder.CoderMode.SIMPLE;
     	}
     	
-		public AbstractCoderBuilder tOnePulse(double tOnePulse) {
+		public ICoderBuilder tOnePulse(double tOnePulse) {
 			this.tOnePulse = tOnePulse;
 			return this;
 		}
 		
-		public AbstractCoderBuilder mode(CoderMode mode) {
+		public ICoderBuilder mode(CoderMode mode) {
 			this.mode = mode;
 			return this;
 		}
     	
-    	public AbstractCoderBuilder secdedEnabled(boolean secdedEnabled) {
+    	public ICoderBuilder secdedEnabled(boolean secdedEnabled) {
     		this.secdedEnabled = secdedEnabled;
     		return this;
     	}
     	
-    	public abstract AbstractCoder build();
+    	public abstract ICoder build();
     	
     	protected void validate() {
 
@@ -94,21 +94,44 @@ public abstract class AbstractCoder {
     
     protected abstract void logMessage(String message);
 
-	/**
-	 * Get the sample rate used in encoder/decoder
-	 * @return Integer sample rate of encoder/decoder
-	 */
+    /**
+     * GETTERS AND SETTERS
+     */
+    
 	public Integer getSampleRate() {
         return sampleRate;
     }
-
 	
+	public int getNoOfChannels() {
+		return noOfChannels;
+	}
+
+	public int getFirstFreq() {
+		return firstFreq;
+	}
+
+	public int getFreqStep() {
+		return freqStep;
+	}
+
+	public double gettOnePulse() {
+		return tOnePulse;
+	}
+
 	public boolean isSecdedEnabled() {
 		return secdedEnabled;
 	}
 	
 	public CoderMode getMode() {
 		return mode;
+	}
+	
+	public boolean isRunning() {
+		return isRunning;
+	}
+	
+	public IDataFrame getDataFrame() {
+		return frame;
 	}
 
 }

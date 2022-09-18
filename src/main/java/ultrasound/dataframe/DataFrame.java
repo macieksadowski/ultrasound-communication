@@ -6,6 +6,8 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import ultrasound.utils.UltrasoundHelper;
+
 
 /**
  * Data frame model for Ultrasound Transmission
@@ -43,11 +45,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author M.Sadowski
  *
  */
-public class DataFrame {
-
-	public static final int MAX_MESSAGE_SIZE = Byte.MAX_VALUE;
-
-	public static final byte BROADCAST_ADDRESS = (byte) 0xff;
+public class DataFrame implements IDataFrame {
 
 	private byte receiverAddress;
 	private Byte command;
@@ -60,14 +58,14 @@ public class DataFrame {
 
 		this.outputStream = new ByteArrayOutputStream();
 
-		outputStream.write(ControlCodes.SOH);
+		outputStream.write(IAsciiControlCodes.SOH);
 
 		this.receiverAddress = builder.receiverAddress;
 		outputStream.write(receiverAddress);
 
 		this.command = builder.command;
 		if (command == null) {
-			command = ControlCodes.STX;
+			command = IAsciiControlCodes.STX;
 		}
 		outputStream.write(command);
 
@@ -75,13 +73,13 @@ public class DataFrame {
 		if (data != null) {
 			this.data = padData(builder.noOfTransmissionChannels);
 			outputStream.write(data);
-			outputStream.write(ControlCodes.ETX);
+			outputStream.write(IAsciiControlCodes.ETX);
 		}
 
 		this.checksum = calculateChecksum();
 		outputStream.write(checksum);
 
-		outputStream.write(ControlCodes.EOT);
+		outputStream.write(IAsciiControlCodes.EOT);
 
 	}
 
@@ -106,7 +104,7 @@ public class DataFrame {
 			return this;
 		}
 
-		public DataFrame build() {
+		public IDataFrame build() {
 			validate();
 			try {
 				return new DataFrame(this);
@@ -119,7 +117,7 @@ public class DataFrame {
 		private void validate() {
 			if (command == null) {
 				throw new NullPointerException("Data frame must contain a command!");
-			} else if (command == ControlCodes.STX) {
+			} else if (command == IAsciiControlCodes.STX) {
 				if (data == null) {
 					throw new IllegalArgumentException("Start of text command given but no text!");
 				}
@@ -142,6 +140,41 @@ public class DataFrame {
 
 	public byte getChecksum() {
 		return this.checksum;
+	}
+	
+	public byte getCommand() {
+		return this.command;
+	}
+	
+	public byte[] getData() {
+		return this.data;
+	}
+	
+	public byte getReceiverAddress() {
+		return this.receiverAddress;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("Data frame:");
+		sb.append(System.lineSeparator());
+		
+		String recAdr = null;
+		if (receiverAddress == IDataFrame.BROADCAST_ADDRESS) {
+			recAdr = "BROADCAST";
+		} else {
+			recAdr = UltrasoundHelper.byteToHex(receiverAddress);
+		}
+		sb.append("\tReceiver address: " + recAdr);
+		sb.append(System.lineSeparator());
+		sb.append("\tCommand: " + ControlCodes.getCodeNameByValue(command));
+		if (data != null) {
+			sb.append(System.lineSeparator());
+			sb.append("\tData: " + new String(data));
+		}
+		return sb.toString();
 	}
 
 	private byte[] padData(int noOfTransmissionChannels) {
