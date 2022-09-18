@@ -144,6 +144,12 @@ public class UltrasoundHelper {
         return hex;
     }
     
+    public static byte hexToByte(String b) {
+
+    	int i = Integer.parseInt(b, 16);
+    	return (byte) i;
+    }
+    
     
     public static short[] sumShortArrays(short[] arrA, short[] arrB) {
     	

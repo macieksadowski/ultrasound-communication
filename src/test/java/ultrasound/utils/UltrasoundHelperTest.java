@@ -38,6 +38,12 @@ public class UltrasoundHelperTest {
         assertEquals("0000",UltrasoundHelper.hex2bin("0"));
         assertEquals("010011010100000101000011010010010100010101001011",UltrasoundHelper.hex2bin("4D414349454B"));
     }
+    
+    @Test
+    public void hexToByte() {
+
+    	assertEquals((byte) 0xff, UltrasoundHelper.hexToByte("ff"));
+    }
 
     @Test
     public void bin2hex() {
