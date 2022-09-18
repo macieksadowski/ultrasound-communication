@@ -179,6 +179,8 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 		// Soundfile generation
 		int bytePos = 0;
 
+		playSound(genTone(40));
+		
 		for (int i = 0; i < (int) signalBinEncoded.length / noOfChannels; i++) {
 
 			short[] curTactSig = new short[N];
@@ -193,6 +195,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 			playSound(curTactSig);
 
 		}
+		playSound(genTone(40));
 		isRunning = false;
 	}
 
