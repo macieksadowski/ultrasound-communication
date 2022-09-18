@@ -193,5 +193,65 @@ public class DataFrame implements IDataFrame {
 
 		return data;
 	}
+	
+	public static IDataFrame parseDataFrame(byte[] byteArr, int noOfChannels, ParserResult result) throws Exception {
+
+		IDataFrame frame = null;
+		
+		result.set(ParserResultValues.START_BYTE_NOT_FOUND);
+
+		boolean startByteFound = byteArr[0] == IAsciiControlCodes.SOH;
+		if (startByteFound) {
+			byte address = byteArr[1];
+			byte command = byteArr[2];
+
+			DataFrameBuilder builder = new DataFrameBuilder(address, noOfChannels);
+			builder.command(command);
+
+			int pos = 3;
+			ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
+			if (command == IAsciiControlCodes.STX) {
+
+				for (; pos < byteArr.length; pos++) {
+					if (byteArr[pos] == IAsciiControlCodes.ETX)
+						break;
+					dataStr.write(byteArr[pos]);
+				}
+				builder.data(dataStr.toByteArray());
+			}
+			byte checksum = byteArr[byteArr.length - 2];
+
+			frame = builder.build();
+			if (frame == null) {
+				result.set(ParserResultValues.FRAME_BUILD_ERROR);
+			}
+
+			if (frame.getChecksum() == checksum) {
+				result.set(ParserResultValues.PARSING_OK);
+			} else {
+				result.set(ParserResultValues.CHECKSUM_INCORRECT);
+			}
+		}
+
+		return frame;
+	}
+
+	public static class ParserResult {
+		
+		private ParserResultValues value;
+		
+		private void set(ParserResultValues value) {
+			this.value = value;
+		}
+		
+		public ParserResultValues get() {
+			return value;
+		}
+		
+	}
+	
+	public enum ParserResultValues {
+		PARSING_OK, START_BYTE_NOT_FOUND, FRAME_BUILD_ERROR, CHECKSUM_INCORRECT
+	}
 
 }

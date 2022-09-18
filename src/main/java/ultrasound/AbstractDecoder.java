@@ -7,11 +7,10 @@ import java.util.Arrays;
 import org.apache.commons.lang3.ArrayUtils;
 
 import sw.FFT;
-import ultrasound.dataframe.ControlCodes;
 import ultrasound.dataframe.DataFrame;
-import ultrasound.dataframe.DataFrame.DataFrameBuilder;
+import ultrasound.dataframe.DataFrame.ParserResult;
+import ultrasound.dataframe.DataFrame.ParserResultValues;
 import ultrasound.dataframe.IAsciiControlCodes;
-import ultrasound.dataframe.IDataFrame;
 import ultrasound.utils.UltrasoundHelper;
 
 /**
@@ -48,6 +47,8 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	protected boolean[] sigBinDec = null;
 
 	private boolean endOfTransmission = false;
+	
+	private ParserResult result;
 	
 	protected ArrayList<DataFrame> dataFrames;
 
@@ -151,14 +152,6 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 
 				decode();
 		
-				if(endOfTransmission) {
-					logMessage("End of frame byte received");
-					parseDataFrame();
-					clearReceivedDataBuffers();
-					
-				}
-				
-
 			} catch (Exception e) {
 				logMessage(e.toString());
 				e.printStackTrace();
@@ -170,90 +163,27 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		stopAudioRecorder();
 	}
 
-public void clearReceivedDataBuffers() {
-	receivedHexMsg = null;
-	resByte.reset();
-	
-	sigBin = null;
-	sigBinDec = null;
-	
-	endOfTransmission = false;
-}
+	public void clearReceivedDataBuffers() {
+		receivedHexMsg = null;
+		resByte.reset();
 
-	private void parseDataFrame() {
-		byte[] resByteArr = resByte.toByteArray();
-		boolean startByteFound = resByteArr[0] == IAsciiControlCodes.SOH;
-		if(startByteFound) {
-			byte address = resByteArr[1];
-			byte command = resByteArr[2];
-			
-			DataFrameBuilder builder = new DataFrameBuilder(address, noOfChannels);
-			builder.command(command);
-			
-			int pos = 3;
-			ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
-			if(command == IAsciiControlCodes.STX) {
-				
-				for (; pos < resByteArr.length; pos++) {
-					if(resByteArr[pos] == IAsciiControlCodes.ETX)
-						break;
-					dataStr.write(resByteArr[pos]);
-				}
-				builder.data(dataStr.toByteArray());
-			}
-			byte checksum = resByteArr[resByteArr.length - 2];
-			
-			try {
-				IDataFrame frame = builder.build();
-				if(frame == null) {
-					throw new Exception("Invalid data frame!");
-				}
-				
-				if(frame.getChecksum() == checksum) {
-					onDataFrameSuccessfullyReceived(address, command, dataStr.toByteArray());
-				}
-				
-			} catch (Exception e) {
-				logMessage(e.toString());
-				e.printStackTrace();
-			}
-			
-			
-			
-			
-			
-			
-			
-		}
-		
-		
+		sigBin = null;
+		sigBinDec = null;
+
 	}
 
-	/**
-	 * @param address
-	 * @param command
-	 * @param dataStr
-	 */
-	private void onDataFrameSuccessfullyReceived(byte address, byte command, byte[] dataStr) {
-		logMessage("Data frame received successfully");
-		
-		String receiverAddress = null;
-		if (address == DataFrame.BROADCAST_ADDRESS) {
-			receiverAddress = "BROADCAST";
-		} else {
-			receiverAddress = UltrasoundHelper.byteToHex(address);
-		}
-		logMessage("Receiver address: " + receiverAddress);
-		
-		logMessage("Command: " + ControlCodes.getCodeNameByValue(command));
-		
-		logMessage("Data: " +  new String(dataStr));
-	}
-	
 	public void stopRecording() {
 		logMessage("Decoder stopped!");
 		isRunning = false;
 	}
+	
+	public void clearResult() {
+		endOfTransmission = false;
+		result = null;
+		frame = null;
+	}
+	
+	protected abstract void onDataFrameSuccessfullyReceived();
 
 	protected abstract void stopAudioRecorder();
 
@@ -397,16 +327,17 @@ public void clearReceivedDataBuffers() {
 					break;
 				}
 				case DATA_FRAME: {
-					
+
 					byte[] res = UltrasoundHelper.bin2byte(resBinDec);
-					for(int i=0;i<res.length;i++) {
-						if(res[i] == IAsciiControlCodes.EOT) {
-							endOfTransmission = true;
+					resByte.write(res);
+					for (int i = 0; i < res.length; i++) {
+						if (res[i] == IAsciiControlCodes.EOT) {
+							onEOTReceived();
+							clearReceivedDataBuffers();
 						}
 					}
-					resByte.write(res);
 					
-
+					break;
 				}
 				}
 				
@@ -416,6 +347,22 @@ public void clearReceivedDataBuffers() {
 
 		}
 	}
+	
+	private void onEOTReceived() throws Exception {
+
+		endOfTransmission = true;
+		logMessage("End of frame byte received");
+		result = new ParserResult();
+		frame = DataFrame.parseDataFrame(resByte.toByteArray(), noOfChannels, result);
+		if (result.get() == ParserResultValues.PARSING_OK) {
+			logMessage("Data frame received successfully");
+			logMessage(frame.toString());
+			onDataFrameSuccessfullyReceived();
+		} else {
+			logMessage("Data frame parsing error: " + result.get().toString());
+		}
+	}
+
 
 	/* GETTERS AND SETTERS */
 
@@ -437,6 +384,14 @@ public void clearReceivedDataBuffers() {
 
 	public double[] getT() {
 		return t;
+	}
+	
+	public boolean endOfTransmissionReceived() {
+		return endOfTransmission;
+	}
+
+	public ParserResult getParserResult() {
+		return result;
 	}
 
 }
