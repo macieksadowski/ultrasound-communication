@@ -39,7 +39,10 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 
 		N = (int) Math.ceil((tOnePulse + tBreak) * sampleRate);
 		sines = new short[noOfChannels][2][N];
-		fadeLength = 0.05;
+		this.fadeLength = 0.05;
+		if (builder.fadeLength != 0) {
+			this.fadeLength = builder.fadeLength;
+		}
 
 		for (int i = 0; i < noOfChannels; i++) {
 
@@ -54,6 +57,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 	public static abstract class AbstractEncoderBuilder extends AbstractCoderBuilder {
 
 		private double tBreak;
+		private double fadeLength;
 
 		/**
 		 * 
@@ -70,6 +74,11 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable 
 
 		public AbstractEncoderBuilder tBreak(double tBreak) {
 			this.tBreak = tBreak;
+			return this;
+		}
+		
+		public AbstractEncoderBuilder fadeLength(double fadeLength) {
+			this.fadeLength = fadeLength;
 			return this;
 		}
 
