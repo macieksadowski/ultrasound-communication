@@ -1,4 +1,4 @@
-package ultrasound;
+package ultrasound.utils;
 
 /**
  * source: https://github.com/eugenp/tutorials/blob/master/data-structures/src/main/java/com/baeldung/circularbuffer/CircularBuffer.java

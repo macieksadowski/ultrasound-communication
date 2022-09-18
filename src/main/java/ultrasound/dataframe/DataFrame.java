@@ -1,4 +1,4 @@
-package ultrasound;
+package ultrasound.dataframe;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package ultrasound;
+package ultrasound.utils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -8,7 +8,6 @@ import org.junit.runner.RunWith;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import ultrasound.UltrasoundHelper;
 
 @RunWith(JUnitParamsRunner.class)
 public class UltrasoundHelperTest {

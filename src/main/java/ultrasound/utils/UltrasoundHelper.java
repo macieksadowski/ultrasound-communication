@@ -1,4 +1,4 @@
-package ultrasound;
+package ultrasound.utils;
 import java.util.Arrays;
 
 /**
@@ -174,11 +174,11 @@ public class UltrasoundHelper {
         return resArr;
     }
 
-    static int findMaxValueIndex(double[] array) {
+    public static int findMaxValueIndex(double[] array) {
         return findMaxValueIndex(array,0,array.length);
     }
 
-    static int findMaxValueIndex(double[] array,int startInd,int endInd) {
+    public static int findMaxValueIndex(double[] array,int startInd,int endInd) {
         int maxValInd = startInd;
         if(endInd < 0 || endInd >= array.length)
             endInd = array.length - 1;
@@ -229,7 +229,7 @@ public class UltrasoundHelper {
             {false, false, false, false,}
     };
 
-    static boolean[] encHamming(boolean[] msg) throws IllegalArgumentException {
+    public static boolean[] encHamming(boolean[] msg) throws IllegalArgumentException {
 
         int k = 4;
         if(msg.length != k) {
@@ -241,7 +241,7 @@ public class UltrasoundHelper {
 
     }
 
-    static boolean[] secded(boolean[] msgEncoded) throws IllegalArgumentException, Exception {
+    public static boolean[] secded(boolean[] msgEncoded) throws IllegalArgumentException, Exception {
 
         int n = 8;// of codeword bits per block
 
@@ -299,7 +299,7 @@ public class UltrasoundHelper {
     }
 
 
-    static boolean[][] multiplyBooleanMatrices(boolean[][] A,boolean[][] B) {
+    public static boolean[][] multiplyBooleanMatrices(boolean[][] A,boolean[][] B) {
         boolean[][] resultMatrix = new boolean[A.length][B[0].length];
 
         for (int row = 0; row < resultMatrix.length; row++) {
@@ -318,7 +318,7 @@ public class UltrasoundHelper {
         return resultMatrix;
     }
 
-    static double[] hamming(int N) {
+    public static double[] hamming(int N) {
         double[] hammingWindow = new double[N];
         for(int i = 0; i < N; i++) {
             hammingWindow[i] = 0.54 - 0.46 * Math.cos((2*i*Math.PI)/(double)(N -1));

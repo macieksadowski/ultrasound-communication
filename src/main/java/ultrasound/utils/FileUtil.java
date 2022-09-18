@@ -1,4 +1,4 @@
-package ultrasound;
+package ultrasound.utils;
 
 import java.io.File;
 import java.io.FileWriter;

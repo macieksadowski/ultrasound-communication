@@ -1,4 +1,4 @@
-package ultrasound;
+package ultrasound.dataframe;
 
 import static org.junit.Assert.assertEquals;
 
