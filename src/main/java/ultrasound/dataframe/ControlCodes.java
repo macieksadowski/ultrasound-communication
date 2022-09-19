@@ -7,7 +7,7 @@ public class ControlCodes {
 	
 	public static String getCodeNameByValue(byte value) {
 
-		for (Field f : ControlCodes.class.getDeclaredFields()) {
+		for (Field f : IAsciiControlCodes.class.getDeclaredFields()) {
 			try {
 				f.setAccessible(true);
 				if (f.canAccess(null)) {
