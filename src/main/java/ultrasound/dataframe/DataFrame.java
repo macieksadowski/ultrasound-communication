@@ -88,10 +88,20 @@ public class DataFrame implements IDataFrame {
 		private byte receiverAddress;
 		private Byte command;
 		private int noOfTransmissionChannels;
+		
+		public DataFrameBuilder(int noOfTransmissionChannels) {
+			this.receiverAddress = BROADCAST_ADDRESS;
+			this.noOfTransmissionChannels = noOfTransmissionChannels;
+		}
 
 		public DataFrameBuilder(byte receiverAddress, int noOfTransmissionChannels) {
 			this.receiverAddress = receiverAddress;
 			this.noOfTransmissionChannels = noOfTransmissionChannels;
+		}
+		
+		public DataFrameBuilder receiverAddress(byte receiverAddress) {
+			this.receiverAddress = receiverAddress;
+			return this;
 		}
 
 		public DataFrameBuilder data(byte[] data) {
