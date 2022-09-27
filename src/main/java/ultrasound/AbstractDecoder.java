@@ -108,6 +108,8 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		this.receivedHexMsg = new StringBuilder();
 		
 		this.dataFrames = new ArrayList<DataFrame>();
+		
+		logMessage(this.toString());
 
 	}
 
@@ -142,12 +144,6 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	public void run() {
 
 		isRunning = true;
-
-		logMessage("Decoder started!");
-		logMessage("Sampling frequency " + sampleRate + " Hz");
-		logMessage("Frame length " + tOnePulse + "s");
-		logMessage("Frequency resolution " + delta_f + "Hz, DFT resolution " + nfft);
-		logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
 
 		startRecording();
 
@@ -410,4 +406,22 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		this.deviceAddress = adr;
 	}
 	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("Decoder:");
+		sb.append(System.lineSeparator());
+		sb.append("\tSampling frequency " + sampleRate + " Hz");
+		sb.append(System.lineSeparator());
+		sb.append("\tFrame length " + tOnePulse + "s");
+		sb.append(System.lineSeparator());
+		sb.append("\tFrequency resolution " + delta_f + "Hz, DFT resolution " + nfft);
+		sb.append(System.lineSeparator());
+		sb.append("\tBandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
+		sb.append(System.lineSeparator());
+		return sb.toString();
+	}
+
+
 }

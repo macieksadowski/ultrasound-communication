@@ -75,5 +75,10 @@ public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice implements I
 	protected void onDecoderTimeout() {
 
 	}
+	
+	@Override
+	public String toString() {
+		return "Slave device ADR: 0x" + getAddress();
+	}
 
 }
