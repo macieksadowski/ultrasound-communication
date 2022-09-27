@@ -8,6 +8,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import sw.FFT;
 import ultrasound.dataframe.DataFrame;
+import ultrasound.dataframe.DataFrame.CheckAddressResult;
 import ultrasound.dataframe.DataFrame.ParserResult;
 import ultrasound.dataframe.DataFrame.ParserResultValues;
 import ultrasound.dataframe.IAsciiControlCodes;
@@ -40,7 +41,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	protected double[] oldVals;
 	protected boolean breakInd;
 	
-	protected String receivedHexMsg;
+	protected StringBuilder receivedHexMsg;
 	protected ByteArrayOutputStream resByte;
 	
 	protected boolean[] sigBin = null;
@@ -49,8 +50,11 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	private boolean endOfTransmission = false;
 	
 	private ParserResult result;
+	private CheckAddressResult checkAdrResult;
 	
 	protected ArrayList<DataFrame> dataFrames;
+	
+	protected Byte deviceAddress = null;
 
 
 	/**
@@ -101,7 +105,11 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		
 		this.resByte = new ByteArrayOutputStream();
 		
+		this.receivedHexMsg = new StringBuilder();
+		
 		this.dataFrames = new ArrayList<DataFrame>();
+		
+		logMessage(this.toString());
 
 	}
 
@@ -137,12 +145,6 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 
 		isRunning = true;
 
-		logMessage("Decoder started!");
-		logMessage("Sampling frequency " + sampleRate + " Hz");
-		logMessage("Frame length " + tOnePulse + "s");
-		logMessage("Frequency resolution " + delta_f + "Hz, DFT resolution " + nfft);
-		logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
-
 		startRecording();
 
 		while (isRunning) {
@@ -164,7 +166,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	}
 
 	public void clearReceivedDataBuffers() {
-		receivedHexMsg = null;
+		receivedHexMsg.setLength(0);
 		resByte.reset();
 
 		sigBin = null;
@@ -180,6 +182,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	public void clearResult() {
 		endOfTransmission = false;
 		result = null;
+		checkAdrResult = null;
 		frame = null;
 	}
 	
@@ -322,7 +325,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 				
 				switch (mode) {
 				case SIMPLE: {
-					receivedHexMsg += resHex;
+					receivedHexMsg.append(resHex);
 					logMessage("Decoded data: " + receivedHexMsg);
 					break;
 				}
@@ -353,13 +356,14 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		endOfTransmission = true;
 		logMessage("End of frame byte received");
 		result = new ParserResult();
-		frame = DataFrame.parseDataFrame(resByte.toByteArray(), noOfChannels, result);
+		checkAdrResult = new CheckAddressResult();
+		frame = DataFrame.parseDataFrame(resByte.toByteArray(), noOfChannels, result, deviceAddress, checkAdrResult);
 		if (result.get() == ParserResultValues.PARSING_OK) {
 			logMessage("Data frame received successfully");
 			logMessage(frame.toString());
 			onDataFrameSuccessfullyReceived();
 		} else {
-			logMessage("Data frame parsing error: " + result.get().toString());
+			logMessage("Data frame parsing result: " + result.get().toString());
 		}
 	}
 
@@ -367,7 +371,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	/* GETTERS AND SETTERS */
 
 	public String getResHex() {
-		return receivedHexMsg;
+		return receivedHexMsg.toString();
 	}
 
 	public int getNfft() {
@@ -393,5 +397,31 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	public ParserResult getParserResult() {
 		return result;
 	}
+	
+	public CheckAddressResult getCheckAddressParserResult() {
+		return checkAdrResult;
+	}
+	
+	public void setDeviceAddress(Byte adr) {
+		this.deviceAddress = adr;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("Decoder:");
+		sb.append(System.lineSeparator());
+		sb.append("\tSampling frequency " + sampleRate + " Hz");
+		sb.append(System.lineSeparator());
+		sb.append("\tFrame length " + tOnePulse + "s");
+		sb.append(System.lineSeparator());
+		sb.append("\tFrequency resolution " + delta_f + "Hz, DFT resolution " + nfft);
+		sb.append(System.lineSeparator());
+		sb.append("\tBandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
+		sb.append(System.lineSeparator());
+		return sb.toString();
+	}
+
 
 }

@@ -1,5 +1,6 @@
 package ultrasound;
 
+import ultrasound.dataframe.DataFrame.CheckAddressResult;
 import ultrasound.dataframe.DataFrame.ParserResult;
 
 public interface IDecoder extends ICoder, Runnable {
@@ -32,8 +33,12 @@ public interface IDecoder extends ICoder, Runnable {
 
 	double[] getT();
 	
-	public boolean endOfTransmissionReceived();
+	boolean endOfTransmissionReceived();
+	
+	void setDeviceAddress(Byte adr);
 
 	ParserResult getParserResult();
+	
+	CheckAddressResult getCheckAddressParserResult();
 
 }

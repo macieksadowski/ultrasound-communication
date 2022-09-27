@@ -2,7 +2,7 @@ package ultrasound;
 
 import ultrasound.dataframe.IDataFrame;
 
-public interface IEncoder extends ICoder {
+public interface IEncoder extends ICoder, Runnable {
 	
 	/**
 	 * Builder for new instances {@link IEncoder}
