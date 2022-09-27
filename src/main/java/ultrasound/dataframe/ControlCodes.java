@@ -10,7 +10,7 @@ public class ControlCodes {
 		for (Field f : IAsciiControlCodes.class.getDeclaredFields()) {
 			try {
 				f.setAccessible(true);
-				if (f.canAccess(null)) {
+				if (f.isAccessible()) {
 
 					if(value == f.getByte(null)) {
 						return f.getName();
