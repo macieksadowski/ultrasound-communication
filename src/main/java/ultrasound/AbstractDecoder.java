@@ -8,6 +8,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import sw.FFT;
 import ultrasound.dataframe.DataFrame;
+import ultrasound.dataframe.DataFrame.CheckAddressResult;
 import ultrasound.dataframe.DataFrame.ParserResult;
 import ultrasound.dataframe.DataFrame.ParserResultValues;
 import ultrasound.dataframe.IAsciiControlCodes;
@@ -49,8 +50,11 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	private boolean endOfTransmission = false;
 	
 	private ParserResult result;
+	private CheckAddressResult checkAdrResult;
 	
 	protected ArrayList<DataFrame> dataFrames;
+	
+	protected Byte deviceAddress = null;
 
 
 	/**
@@ -182,6 +186,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	public void clearResult() {
 		endOfTransmission = false;
 		result = null;
+		checkAdrResult = null;
 		frame = null;
 	}
 	
@@ -355,7 +360,8 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		endOfTransmission = true;
 		logMessage("End of frame byte received");
 		result = new ParserResult();
-		frame = DataFrame.parseDataFrame(resByte.toByteArray(), noOfChannels, result);
+		checkAdrResult = new CheckAddressResult();
+		frame = DataFrame.parseDataFrame(resByte.toByteArray(), noOfChannels, result, deviceAddress, checkAdrResult);
 		if (result.get() == ParserResultValues.PARSING_OK) {
 			logMessage("Data frame received successfully");
 			logMessage(frame.toString());
@@ -395,5 +401,13 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	public ParserResult getParserResult() {
 		return result;
 	}
-
+	
+	public CheckAddressResult getCheckAddressParserResult() {
+		return checkAdrResult;
+	}
+	
+	public void setDeviceAddress(Byte adr) {
+		this.deviceAddress = adr;
+	}
+	
 }

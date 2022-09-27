@@ -51,6 +51,8 @@ public class DataFrame implements IDataFrame {
 	private Byte command;
 	private byte checksum;
 	private byte[] data;
+	
+	private static int MIN_DATA_FRAME_LENGTH_IN_BYTES = 5;
 
 	private ByteArrayOutputStream outputStream;
 
@@ -204,42 +206,83 @@ public class DataFrame implements IDataFrame {
 		return data;
 	}
 	
-	public static IDataFrame parseDataFrame(byte[] byteArr, int noOfChannels, ParserResult result) throws Exception {
+	private static CheckAddressResultValues checkAddress(byte[] byteArr, Byte deviceAddress) {
+	
+		if(deviceAddress == null) {
+			return CheckAddressResultValues.OK;
+		}
+		
+		CheckAddressResultValues result = CheckAddressResultValues.ERROR;
+
+		if (byteArr.length >= MIN_DATA_FRAME_LENGTH_IN_BYTES) {
+			boolean startByteFound = byteArr[0] == IAsciiControlCodes.SOH;
+			if (startByteFound) {
+				byte address = byteArr[1];
+				if(address == BROADCAST_ADDRESS) {
+					result = CheckAddressResultValues.BROADCAST;
+				} else if(address == deviceAddress) {
+					result = CheckAddressResultValues.OK;
+				} else {
+					result = CheckAddressResultValues.OTHER_RECIPIENT;
+				}
+			}
+		}
+		return result;
+	}
+
+	public static IDataFrame parseDataFrame(byte[] byteArr, int noOfChannels, ParserResult result, Byte deviceAddress, CheckAddressResult checkAddressResult)
+			throws Exception {
 
 		IDataFrame frame = null;
-		
-		result.set(ParserResultValues.START_BYTE_NOT_FOUND);
 
-		boolean startByteFound = byteArr[0] == IAsciiControlCodes.SOH;
-		if (startByteFound) {
-			byte address = byteArr[1];
-			byte command = byteArr[2];
+		result.set(ParserResultValues.INCORRECT_FRAME_LENGTH);
 
-			DataFrameBuilder builder = new DataFrameBuilder(address, noOfChannels);
-			builder.command(command);
+		if (byteArr.length >= MIN_DATA_FRAME_LENGTH_IN_BYTES) {
 
-			int pos = 3;
-			ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
-			if (command == IAsciiControlCodes.STX) {
+			result.set(ParserResultValues.START_BYTE_NOT_FOUND);
+			boolean startByteFound = byteArr[0] == IAsciiControlCodes.SOH;
+			if (startByteFound) {
+				byte address = byteArr[1];
+				checkAddressResult.set(checkAddress(byteArr, deviceAddress));
+				if (checkAddressResult.get() == CheckAddressResultValues.OK || checkAddressResult.get() == CheckAddressResultValues.BROADCAST) {
+					
+					DataFrameBuilder builder = new DataFrameBuilder(address, noOfChannels);
+					
+					byte command = byteArr[2];
+					builder.command(command);
+					
+					//Frame with command should always have minimum length!
+					if(command != IAsciiControlCodes.STX && byteArr.length != MIN_DATA_FRAME_LENGTH_IN_BYTES) {
+						result.set(ParserResultValues.INCORRECT_FRAME_LENGTH);
+						return frame;
+					} 
 
-				for (; pos < byteArr.length; pos++) {
-					if (byteArr[pos] == IAsciiControlCodes.ETX)
-						break;
-					dataStr.write(byteArr[pos]);
+					int pos = 3;
+					ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
+					if (command == IAsciiControlCodes.STX) {
+
+						for (; pos < byteArr.length; pos++) {
+							if (byteArr[pos] == IAsciiControlCodes.ETX)
+								break;
+							dataStr.write(byteArr[pos]);
+						}
+						builder.data(dataStr.toByteArray());
+					} 
+					byte checksum = byteArr[byteArr.length - 2];
+
+					frame = builder.build();
+					if (frame == null) {
+						result.set(ParserResultValues.FRAME_BUILD_ERROR);
+					}
+
+					if (frame.getChecksum() == checksum) {
+						result.set(ParserResultValues.PARSING_OK);
+					} else {
+						result.set(ParserResultValues.CHECKSUM_INCORRECT);
+					}
+				} else {
+					result.set(ParserResultValues.OTHER_RECIPIENT);
 				}
-				builder.data(dataStr.toByteArray());
-			}
-			byte checksum = byteArr[byteArr.length - 2];
-
-			frame = builder.build();
-			if (frame == null) {
-				result.set(ParserResultValues.FRAME_BUILD_ERROR);
-			}
-
-			if (frame.getChecksum() == checksum) {
-				result.set(ParserResultValues.PARSING_OK);
-			} else {
-				result.set(ParserResultValues.CHECKSUM_INCORRECT);
 			}
 		}
 
@@ -258,10 +301,42 @@ public class DataFrame implements IDataFrame {
 			return value;
 		}
 		
+		@Override
+		public String toString() {
+			if(value != null) {
+				return this.value.toString();
+			} else return "empty";
+		}
+		
+	}
+
+	public static class CheckAddressResult {
+		
+		private CheckAddressResultValues value;
+		
+		private void set(CheckAddressResultValues value) {
+			this.value = value;
+		}
+		
+		public CheckAddressResultValues get() {
+			return value;
+		}
+		
+		@Override
+		public String toString() {
+			if(value != null) {
+				return this.value.toString();
+			} else return "empty";
+		}
+		
+	}
+	
+	public enum CheckAddressResultValues {
+		OK, BROADCAST, OTHER_RECIPIENT, ERROR
 	}
 	
 	public enum ParserResultValues {
-		PARSING_OK, START_BYTE_NOT_FOUND, FRAME_BUILD_ERROR, CHECKSUM_INCORRECT
+		PARSING_OK, INCORRECT_FRAME_LENGTH, START_BYTE_NOT_FOUND, FRAME_BUILD_ERROR, CHECKSUM_INCORRECT, OTHER_RECIPIENT
 	}
 
 }
