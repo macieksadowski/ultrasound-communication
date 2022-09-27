@@ -4,21 +4,66 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import ultrasound.IDecoder;
 import ultrasound.IEncoder;
-import ultrasound.dataframe.DataFrame.DataFrameBuilder;
 import ultrasound.dataframe.DataFrame.ParserResultValues;
 import ultrasound.dataframe.IAsciiControlCodes;
 import ultrasound.dataframe.IDataFrame;
 
 public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements IMasterUltrasoundDevice {
 	
+	protected volatile boolean isRunning;
+	
 	private long decoderTimeout = DEFAULT_TIMEOUT;
 	
 	private byte lastReceiverAddress;
 	private byte lastCommand;
 	private byte[] lastData;
-
+	
+	private Byte receiverAddress;
+	private Byte command;
+	private byte[] data;
+	
+	private actionType actionToRun;
+	private actionType runningAction;
+	
 	public MasterUltrasoundDevice(IEncoder encoder, IDecoder decoder) {
 		super(IDataFrame.MASTER_ADDRESS, encoder, decoder);
+		runningAction = actionType.none;
+		actionToRun = actionType.none;
+	}
+	
+	public void run() {
+		isRunning = true;
+		
+		while(isRunning) {
+			
+			if(runningAction == actionType.none) {
+				runningAction = actionToRun;
+				actionToRun = actionType.none;
+			}
+			
+			switch(runningAction) {
+			case send:
+				super.send(receiverAddress, command, data);		
+				receive(decoderTimeout);
+				break;
+			case send_broadcast:
+				super.send(receiverAddress, command, data);
+				break;
+			case none:
+			default:
+				
+				break;
+			}
+			
+			runningAction = actionType.none;
+			
+			pause(100);
+		}
+	}
+	
+	
+	public void stop() {
+		isRunning = false;
 	}
 
 	public void sendBroadcast(byte command) {
@@ -30,13 +75,11 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 	}
 
 	public void sendBroadcast(byte command, byte[] data) {
-
-		IDataFrame frame = new DataFrameBuilder(IDataFrame.BROADCAST_ADDRESS, encoder.getNoOfChannels()).command(command).data(data)
-				.build();
-
-		encoder.setDataFrame(frame);
-		encoder.run();
-
+			this.receiverAddress = IDataFrame.BROADCAST_ADDRESS;
+			this.command = command;
+			this.data = ArrayUtils.clone(data);
+			
+			this.actionToRun = actionType.send_broadcast;
 	}
 
 	public void send(byte receiverAddress, byte command) {
@@ -48,13 +91,17 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 	}
 
 	public void send(byte receiverAddress, byte command, byte[] data) {
-		lastReceiverAddress = receiverAddress;
-		lastCommand = command;
-		lastData = ArrayUtils.clone(data);
-		super.send(receiverAddress, command, data);		
-		receive(decoderTimeout);
+		this.receiverAddress = receiverAddress;
+		this.command = command;
+		this.data = ArrayUtils.clone(data);
+		
+		this.lastReceiverAddress = this.receiverAddress;
+		this.lastCommand = this.command;
+		this.lastData = this.data;
+		
+		this.actionToRun = actionType.send;
+		
 	}
-
 
 	public void setDecoderTimeout(long timeout) {
 		this.decoderTimeout = timeout;
@@ -78,6 +125,11 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 	protected void onDecoderTimeout() {
 		logMessage("Transmission confirmation not received");
 		send(lastReceiverAddress, lastCommand, lastData);
+	}
+	
+	
+	public enum actionType {
+		send_broadcast, send, none
 	}
 
 }
