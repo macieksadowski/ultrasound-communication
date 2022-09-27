@@ -40,7 +40,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	protected double[] oldVals;
 	protected boolean breakInd;
 	
-	protected String receivedHexMsg;
+	protected StringBuilder receivedHexMsg;
 	protected ByteArrayOutputStream resByte;
 	
 	protected boolean[] sigBin = null;
@@ -100,6 +100,8 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 		}
 		
 		this.resByte = new ByteArrayOutputStream();
+		
+		this.receivedHexMsg = new StringBuilder();
 		
 		this.dataFrames = new ArrayList<DataFrame>();
 
@@ -164,7 +166,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	}
 
 	public void clearReceivedDataBuffers() {
-		receivedHexMsg = null;
+		receivedHexMsg.setLength(0);
 		resByte.reset();
 
 		sigBin = null;
@@ -322,7 +324,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 				
 				switch (mode) {
 				case SIMPLE: {
-					receivedHexMsg += resHex;
+					receivedHexMsg.append(resHex);
 					logMessage("Decoded data: " + receivedHexMsg);
 					break;
 				}
@@ -359,7 +361,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 			logMessage(frame.toString());
 			onDataFrameSuccessfullyReceived();
 		} else {
-			logMessage("Data frame parsing error: " + result.get().toString());
+			logMessage("Data frame parsing result: " + result.get().toString());
 		}
 	}
 
@@ -367,7 +369,7 @@ public abstract class AbstractDecoder extends AbstractCoder implements Runnable,
 	/* GETTERS AND SETTERS */
 
 	public String getResHex() {
-		return receivedHexMsg;
+		return receivedHexMsg.toString();
 	}
 
 	public int getNfft() {
