@@ -1,39 +1,43 @@
-package ultrasound;
+package ultrasound.encoder;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import ultrasound.AbstractCoder;
+import ultrasound.ICoder;
 import ultrasound.dataframe.IDataFrame;
 import ultrasound.utils.UltrasoundHelper;
+import ultrasound.utils.log.EncoderLogger;
 
-public abstract class AbstractEncoder extends AbstractCoder implements Runnable, IEncoder {
+public abstract class AbstractEncoder extends AbstractCoder implements IEncoder {
+	
+	private static final Pattern hexStringRegex = Pattern.compile("-?[0-9a-fA-F]+");
+
 
 	protected double tBreak;
 	private double fadeLength;
 	protected final short[][][] sines;
-	
+
 	protected String hexData = "";
-	
+
 	protected boolean[] signalBinEncoded;
-	boolean[] signalBin;
+	private boolean[] signalBin;
 
 	/**
-	 * Abstract class of an encoder, which converts hex data and transmit it as sound transmission.
-	 * All abstract methods should be implemented platform-specific.
+	 * Internal constructor for a new abstract encoder/decoder object. To
+	 * instantiate new object of this type use {@link AbstractEncoderBuilder}
 	 * 
-	 * @param sampleRate   sample rate used by decoder
-	 * @param noOfChannels number of transmission channels (has to be a power of 2)
-	 * @param firstFreq    lowest frequency used by decoder (it will be a frequency
-	 *                     of low signal of the first channel)
-	 * @param freqStep     frequency interval between successive transmission
-	 *                     channels
+	 * @param builder {@link AbstractEncoderBuilder}
 	 */
 	protected AbstractEncoder(AbstractEncoderBuilder builder) {
 
 		super(builder);
-		
+
+		logger = EncoderLogger.getInstance();
+
 		this.tBreak = 2.0 * this.tOnePulse;
 		if (builder.tBreak != 0) {
 			this.tBreak = builder.tBreak;
@@ -53,52 +57,15 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 		}
 	}
 
-	public static abstract class AbstractEncoderBuilder extends AbstractCoderBuilder implements IEncoderBuilder {
-
-		private double tBreak;
-		private double fadeLength;
-
-		/**
-		 * 
-		 * @param sampleRate   sample rate used by encoder
-		 * @param noOfChannels number of transmission channels (has to be a power of 2)
-		 * @param firstFreq    lowest frequency used by encoder (it will be a frequency
-		 *                     of low signal of the first channel)
-		 * @param freqStep     frequency interval between successive transmission
-		 *                     channels
-		 */
-		public AbstractEncoderBuilder(int sampleRate, int noOfChannels, int firstFreq, int freqStep) {
-			super(sampleRate, noOfChannels, firstFreq, freqStep);
-		}
-
-		public IEncoderBuilder tBreak(double tBreak) {
-			this.tBreak = tBreak;
-			return this;
-		}
-		
-		public IEncoderBuilder fadeLength(double fadeLength) {
-			this.fadeLength = fadeLength;
-			return this;
-		}
-
-		@Override
-		public abstract IEncoder build();
-
-		protected void validate() {
-			super.validate();
-		}
-
-	}
-
 	public void run() {
 
 		try {
-			
-			if(this.mode.equals(ICoder.CoderMode.SIMPLE)) {
+
+			if (this.mode == ICoder.CoderMode.SIMPLE) {
 				validateHexData();
 			}
-			
-			logMessage("Transmitting message...");
+
+			logger.logMessage("Transmitting message...");
 
 			constructAudioStream();
 
@@ -106,58 +73,64 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 
 			closeAudioStream();
 
-			logMessage("Transmission ended.");
-			if(mode == CoderMode.SIMPLE) {
-				logMessage("Message: " + hexData);
+			logger.logMessage("Transmission ended.");
+			if (mode == CoderMode.SIMPLE) {
+				logger.logMessage("Message: " + hexData);
 			} else {
-				logMessage(frame.toString());
+				logger.logMessage(frame.toString());
 			}
-			
-			logMessage("Bin message: " + getBinaryMessageString());
-			logMessage("Hex message: " + getHexMessageString());
-			logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
-			logMessage("Speed rate: " + Math.floor((double) noOfChannels / (tOnePulse + tBreak)) + "b/s");
+
+			logger.logMessage("Bin message: " + getBinaryMessageString());
+			logger.logMessage("Hex message: " + getHexMessageString());
+			logger.logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
+			logger.logMessage("Speed rate: " + Math.floor(noOfChannels / (tOnePulse + tBreak)) + "b/s");
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			logMessage(e.toString());
+			logger.logMessage(e.toString());
 		}
 	}
-	
+
+	/**
+	 * This method should implement closing all opened resources used for audio
+	 * playback. It will be called after end of transmission
+	 */
 	protected abstract void closeAudioStream();
 
+	/**
+	 * This method should implement playback of given sound data.
+	 * 
+	 * @param soundData audio data given as array of shorts.
+	 */
 	protected abstract void playSound(short[] soundData);
 
+	/**
+	 * This method should implement opening and initializing all necessary resources
+	 * used for audio playback. It will be called before the beginning of
+	 * transmission
+	 */
 	protected abstract void constructAudioStream() throws Exception;
 
 	/**
-	 *
+	 * This method implements generating audio data for an ultrasound transmission.
+	 * It converts binary data to audio signals and sends those signals to audio
+	 * playback device using {@link AbstractEncoder#playSound(short[])}
+	 * 
 	 * @param hexData
 	 */
 	private void transmit() {
 
 		isRunning = true;
-		
-		switch(this.mode) {
-		case SIMPLE: {
-			// Signal conversion form hex to binary
-			signalBin = UltrasoundHelper.binArrayFromBinStr(UltrasoundHelper.hex2bin(hexData));
-			
-			int pad = (2 * signalBin.length) % noOfChannels;
-			if (pad != 0) {
-				boolean[] zeros = new boolean[noOfChannels - pad / 2];
-				Arrays.fill(zeros, false);
-				signalBin = ArrayUtils.addAll(signalBin, zeros);
-			}
-			break;
-		}
-		case DATA_FRAME: {
-			signalBin = UltrasoundHelper.byte2bin(frame.get());
-			break;
-		}
-			
-		default:
-			return;
+
+		switch (this.mode) {
+			case SIMPLE: 
+				convertHexSignalToBinary();
+				break;
+			case DATA_FRAME: 
+				signalBin = UltrasoundHelper.byte2bin(frame.get());
+				break;
+			default:
+				return;
 		}
 
 		// Hamming code
@@ -180,8 +153,8 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 		int bytePos = 0;
 
 		playSound(genTone(40));
-		
-		for (int i = 0; i < (int) signalBinEncoded.length / noOfChannels; i++) {
+
+		for (int i = 0; i < signalBinEncoded.length / noOfChannels; i++) {
 
 			short[] curTactSig = new short[N];
 			for (int j = 0; j < noOfChannels; j++) {
@@ -198,13 +171,25 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 		playSound(genTone(40));
 		isRunning = false;
 	}
+	
+	private void convertHexSignalToBinary() {
+		// Signal conversion form hex to binary
+		signalBin = UltrasoundHelper.binArrayFromBinStr(UltrasoundHelper.hex2bin(hexData));
+
+		int pad = (2 * signalBin.length) % noOfChannels;
+		if (pad != 0) {
+			boolean[] zeros = new boolean[noOfChannels - pad / 2];
+			Arrays.fill(zeros, false);
+			signalBin = ArrayUtils.addAll(signalBin, zeros);
+		}
+	}
 
 	/**
 	 * Helper's method used to generate tone data of given frequency with silence
 	 * before and after signal
 	 * 
 	 * @param freq frequency of signal to be generated [Hz]
-	 * @return {@code short[]} array with samples of generated signal 
+	 * @return {@code short[]} array with samples of generated signal
 	 */
 	private short[] genTone(double freq) {
 
@@ -223,10 +208,12 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 
 			if (i > Nbreak && i < N - Nbreak) {
 
-				if (i < Nbreak + fadeLength * Nsig)
+				if (i < Nbreak + fadeLength * Nsig) {
 					filterVal = filterStep * iSig;
-				else if (i > Nbreak + (1.0 - fadeLength) * Nsig)
+				}
+				if (i > Nbreak + (1.0 - fadeLength) * Nsig) {
 					filterVal = -1.0 * filterStep * (iSig - Nsig);
+				}
 				sample[i] = (short) (filterVal * Math.sin(angle) * Short.MAX_VALUE);
 
 				angle += increment;
@@ -249,7 +236,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 	 */
 	private void validateHexData() throws InvalidAlgorithmParameterException {
 		if (hexData != null && !hexData.isEmpty()) {
-			if(!hexData.matches("-?[0-9a-fA-F]+")) {
+			if (!hexStringRegex.matcher(hexData).matches()) {
 				throw new InvalidAlgorithmParameterException("Hex data contains invalid characters!");
 			}
 		} else {
@@ -259,11 +246,11 @@ public abstract class AbstractEncoder extends AbstractCoder implements Runnable,
 	}
 
 	/** Getters and setters */
-	
+
 	public void setHexData(String hexData) {
 		this.hexData = hexData;
 	}
-	
+
 	public void setDataFrame(IDataFrame frame) {
 		this.frame = frame;
 	}

@@ -2,45 +2,86 @@ package ultrasound;
 
 import ultrasound.dataframe.IDataFrame;
 
+/**
+ * Interface providing common methods for encoder and decoder devices
+ *
+ */
 public interface ICoder {
-	
-    public enum CoderMode {
-    	SIMPLE,
-    	DATA_FRAME
-    }
-    
-    public interface ICoderBuilder {
-    	
-		public ICoderBuilder tOnePulse(double tOnePulse);
-		
-		public ICoderBuilder mode(CoderMode mode);
-    	
-    	public ICoderBuilder secdedEnabled(boolean secdedEnabled);
-    	
-    	public abstract ICoder build();
-    	
-    }
+
+	/**
+	 * Enum used to define mode in which device should be launched.
+	 * <ul>
+	 * <li>{@code CoderMode#SIMPLE} - raw hex data will be send and receive</li>
+	 * <li>{@code CoderMode#DATA_FRAME} - data will be transmitted encapsulated in
+	 * frames</li>
+	 * <ul>
+	 */
+	public enum CoderMode {
+		SIMPLE, DATA_FRAME
+	}
 
 	/**
 	 * Get the sample rate used in encoder/decoder
+	 * 
 	 * @return Integer sample rate of encoder/decoder
 	 */
-    public Integer getSampleRate();
-	
-	public int getNoOfChannels();
+	Integer getSampleRate();
 
-	public int getFirstFreq();
+	/**
+	 * Get number of transmission channels
+	 * 
+	 * @return <code>int</code> number of transmission channels
+	 */
+	int getNoOfChannels();
 
-	public int getFreqStep();
+	/**
+	 * Get the lowest transmission frequency (Frequency of the 1st channel)
+	 * 
+	 * @return <code>int</code> frequency in [Hz]
+	 */
+	int getFirstFreq();
 
-	public double gettOnePulse();
-	
-	public boolean isSecdedEnabled();
-	
-	public CoderMode getMode();
-	
-	public boolean isRunning();
-	
-	public IDataFrame getDataFrame();
+	/**
+	 * Get frequency interval between successive transmission channels
+	 * 
+	 * @return <code>int</code> frequency in [Hz]
+	 */
+	int getFreqStep();
+
+	/**
+	 * Get time length of one transmission pulse
+	 * 
+	 * @return <code>double</code> time length of one transmission pulse in seconds
+	 *         [s]
+	 */
+	double gettOnePulse();
+
+	/**
+	 * Returns <code>true</code> when SECDED Encoding is enabled
+	 * 
+	 * @return <code>boolean</code> flag for SECDED Encoding
+	 */
+	boolean isSecdedEnabled();
+
+	/**
+	 * Get device mode (Simple or Data frame) {@link CoderMode}
+	 * 
+	 * @return {@link CoderMode} of the device
+	 */
+	CoderMode getMode();
+
+	/**
+	 * Returns <true> if the device is currently running
+	 * 
+	 * @return <code>boolean</code> flag of device state
+	 */
+	boolean isRunning();
+
+	/**
+	 * Returns current {@link IDataFrame} stored in the device
+	 * 
+	 * @return {@link IDataFrame} object
+	 */
+	IDataFrame getDataFrame();
 
 }

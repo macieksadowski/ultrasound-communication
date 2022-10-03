@@ -2,7 +2,10 @@ package ultrasound;
 
 import java.util.Arrays;
 
-class MockDecoderSimple extends AbstractDecoder {
+import ultrasound.decoder.AbstractDecoderBuilder;
+import ultrasound.decoder.AbstractDecoderSimple;
+
+class MockDecoderSimple extends AbstractDecoderSimple {
 
     private short[] audioData;
     private int i;
@@ -14,7 +17,7 @@ class MockDecoderSimple extends AbstractDecoder {
         this.recordFrag = new short[N];
     }
 
-    public static class MockDecoderBuilder extends AbstractDecoder.AbstractDecoderBuilder {
+    public static class MockDecoderBuilder extends AbstractDecoderBuilder {
 
         private short[] audioData;
 
@@ -56,22 +59,18 @@ class MockDecoderSimple extends AbstractDecoder {
     }
 
 	@Override
-	protected void onDataFrameSuccessfullyReceived() {
-		
-	}
-
-	@Override
 	protected void stopAudioRecorder() {
 		
 	}
 
 	@Override
-	protected void logMessage(String message) {
+	protected void startRecording() {
 		
 	}
 
 	@Override
-	protected void startRecording() {
+	public void clearResult() {
+		// TODO Auto-generated method stub
 		
 	}
 

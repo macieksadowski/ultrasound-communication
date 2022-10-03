@@ -1,30 +1,26 @@
 package ultrasound;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
-class DecoderSimpleTest {
+import ultrasound.decoder.IDecoderSimple;
 
+public class AbstractDecoderTest {
 
-
-    MockDecoderSimple decoder;
-
-    Thread decoderThread;
-    double audioSigMockLen = 0.0;
-
-    @BeforeEach
-    public void init() throws Exception {
-
-        InputStream in = this.getClass().getClassLoader().getResourceAsStream("6C.txt");
+	private IDecoderSimple decoder;
+	private short[] audioData;
+	private double audioSigMockLen = 0.0;
+	private Thread decoderThread;
+    
+	
+	@BeforeAll
+	void initAll() {
+		InputStream in = this.getClass().getClassLoader().getResourceAsStream("6C.txt");
         Scanner s = new Scanner(in);
 
         List<Short> audioSigList = new ArrayList<Short>();
@@ -52,32 +48,12 @@ class DecoderSimpleTest {
         decoder = builder.build();
 
         audioSigMockLen = (double) audioSig.length / (double) sampleRate;
-
-    }
-
-    @Test
-    void testDecode() {
-
-        decoderThread = new Thread(decoder);
-        decoderThread.start();
-        StopWatch watch = new StopWatch();
-        watch.start();
-        while(true) {
-            if(watch.getTime()/1000.0 > audioSigMockLen) {
-                watch.stop();
-                decoder.stopDecoder();
-
-                decoderThread = null;
-                break;
-            }
-        }
-        assertEquals("6c",decoder.getResHex());
-
-    }
-
-    @AfterEach
-    public void finish() {
-
-    }
+	}
+	
+	@BeforeEach
+	void init() {
+		
+	}
+	
 
 }

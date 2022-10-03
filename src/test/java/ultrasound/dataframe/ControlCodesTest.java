@@ -2,20 +2,20 @@ package ultrasound.dataframe;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ControlCodesTest {
+class ControlCodesTest {
 
 	
     @Test
-    public void getCodeNameByValue() {
+    void testGetCodeNameByValue() {
         byte controlCode = IAsciiControlCodes.ACK;
         String controlCodeName = "ACK";
         assertEquals(controlCodeName, ControlCodes.getCodeNameByValue(controlCode));
     }
     
     @Test
-    public void getCodeByName() {
+    void testGetCodeByName() {
         byte controlCode = IAsciiControlCodes.ACK;
         String controlCodeName = "ACK";
         assertEquals(controlCode, ControlCodes.getCodeByName(controlCodeName).byteValue());

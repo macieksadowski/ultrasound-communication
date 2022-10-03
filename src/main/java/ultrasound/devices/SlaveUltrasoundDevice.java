@@ -1,17 +1,16 @@
 package ultrasound.devices;
 
-import ultrasound.IDecoder;
-import ultrasound.IEncoder;
-import ultrasound.dataframe.DataFrame.CheckAddressResultValues;
+import ultrasound.dataframe.CheckAddressResult.CheckAddressResultValues;
+import ultrasound.decoder.IDecoder;
+import ultrasound.encoder.IEncoder;
 import ultrasound.dataframe.IAsciiControlCodes;
 import ultrasound.dataframe.IDataFrame;
 
-public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice implements ISlaveUltrasoundDevice {
+public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice {
 
-	protected volatile boolean isRunning;
-	
 	public SlaveUltrasoundDevice(byte address, IEncoder encoder, IDecoder decoder) {
 		super(address, encoder, decoder);
+		logger.setTag("SLV");
 	}
 
 	public void run() {
@@ -29,53 +28,56 @@ public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice implements I
 
 	protected void onTransmissionReceived() {
 
-		switch(result.get()) {
-		case PARSING_OK:
-			if (receivedDataFrame.getCommand() == IAsciiControlCodes.STX) {
-				handleData(receivedDataFrame.getData());
-			} else {
-				handleCommand(receivedDataFrame.getCommand());
+		switch (result.get()) {
+			case PARSING_OK:
+				onParsingOk();
+				break;
+			case OTHER_RECIPIENT:
+				logger.logMessage("Message for another recipient");
+				break;
+			default:
+				if (checkAdrResult.get() == CheckAddressResultValues.OK) {
+					send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.NAK, null);
+					logger.logMessage("Retry transmission was requested");
+				}
+				break;
 			}
-			if(checkAdrResult.get() == CheckAddressResultValues.OK) {
-				send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.ACK, null);
-				logMessage("Acknowledgment of receipt of message has been sent");
-			}
-			break;
-		case OTHER_RECIPIENT:
-			logMessage("Message for another recipient");
-			break;
-		default:
-			if (checkAdrResult.get() == CheckAddressResultValues.OK) {
-				send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.NAK, null);
-				logMessage("Retry transmission was requested");
-			}
-			break;
-		}
-
 	}
-	
-	protected void handleData(byte[] data) {
-		if(checkAdrResult.get() == CheckAddressResultValues.BROADCAST) {
-			logMessage("Broadcast data from master received");
+
+	private void onParsingOk() {
+		if (receivedDataFrame.getCommand() == IAsciiControlCodes.STX) {
+			handleData(receivedDataFrame.getData());
 		} else {
-			logMessage("Data from master received");
-			
+			handleCommand(receivedDataFrame.getCommand());
+		}
+		if (checkAdrResult.get() == CheckAddressResultValues.OK) {
+			send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.ACK, null);
+			logger.logMessage("Acknowledgment of receipt of message has been sent");
+		}
+	}
+
+	protected void handleData(byte[] data) {
+		if (checkAdrResult.get() == CheckAddressResultValues.BROADCAST) {
+			logger.logMessage("Broadcast data from master received");
+		} else {
+			logger.logMessage("Data from master received");
+
 		}
 	}
 
 	protected void handleCommand(byte cmd) {
-		if(checkAdrResult.get() == CheckAddressResultValues.BROADCAST) {
-			logMessage("Broadcast command from master received");
+		if (checkAdrResult.get() == CheckAddressResultValues.BROADCAST) {
+			logger.logMessage("Broadcast command from master received");
 		} else {
-			logMessage("Command from master received");
+			logger.logMessage("Command from master received");
 		}
 	}
 
 	@Override
 	protected void onDecoderTimeout() {
-
+		// TODO document why this method is empty
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Slave device ADR: 0x" + getAddress();

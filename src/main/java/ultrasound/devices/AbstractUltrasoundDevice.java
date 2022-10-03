@@ -1,59 +1,54 @@
 package ultrasound.devices;
 
-import java.io.PrintWriter;
-
 import org.apache.commons.lang3.time.StopWatch;
 
-import ultrasound.IDecoder;
-import ultrasound.IEncoder;
-import ultrasound.dataframe.IDataFrame;
-import ultrasound.dataframe.DataFrame.CheckAddressResult;
+import ultrasound.dataframe.CheckAddressResult;
 import ultrasound.dataframe.DataFrame.DataFrameBuilder;
-import ultrasound.dataframe.DataFrame.ParserResult;
+import ultrasound.decoder.IDecoder;
+import ultrasound.encoder.IEncoder;
+import ultrasound.dataframe.IDataFrame;
+import ultrasound.dataframe.ParserResult;
+import ultrasound.utils.log.DecoderLogger;
+import ultrasound.utils.log.DeviceLogger;
+import ultrasound.utils.log.EncoderLogger;
+import ultrasound.utils.log.ILogger;
 
 public abstract class AbstractUltrasoundDevice implements IDevice {
 
-	protected static long DEFAULT_TIMEOUT = 20000;
-	protected static long NO_TIMEOUT = 0;
+	protected static final long DEFAULT_TIMEOUT = 20000;
+	protected static final long NO_TIMEOUT = 0;
 
-	private PrintWriter out;
+	protected volatile boolean isRunning;
 
 	protected IEncoder encoder;
 	protected IDecoder decoder;
 	protected Thread decoderThread;
 
-	protected ParserResult result = null;
-	protected CheckAddressResult checkAdrResult = null;
-	protected IDataFrame receivedDataFrame = null;
+	protected ParserResult result;
+	protected CheckAddressResult checkAdrResult;
+	protected IDataFrame receivedDataFrame;
 
 	private Byte address;
 
-	public AbstractUltrasoundDevice(byte address, IEncoder encoder, IDecoder decoder) {
+	protected ILogger logger;
+
+	protected AbstractUltrasoundDevice(byte address, IEncoder encoder, IDecoder decoder) {
 		this.address = address;
 
 		this.encoder = encoder;
 		this.decoder = decoder;
 		this.decoder.setDeviceAddress(address);
-		
-		logMessage(this.toString());
-		
+
+		logger = DeviceLogger.getInstance();
+		EncoderLogger.getInstance().setLogOut(logger.getOut());
+		DecoderLogger.getInstance().setLogOut(logger.getOut());
+
+		logger.logMessage(this.toString());
+
 	}
 
 	public byte getAddress() {
 		return address;
-	}
-
-	public void connectToLogOutput(PrintWriter out) {
-		this.out = out;
-	}
-
-	protected void logMessage(String s) {
-		String msg = "DEV - " + s;
-		if (out != null) {
-			out.println(msg);
-		} else {
-			System.out.println(msg);
-		}
 	}
 
 	protected void receive(final Long timeout) {
@@ -70,10 +65,11 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 				receivedDataFrame = decoder.getDataFrame();
 				decoder.clearResult();
 				stopDecoder();
-				logMessage("PAUSE");
+				logger.logMessage("PAUSE");
 				pause(700);
 				onTransmissionReceived();
-			} else if (timeout > 0 && watch.getTime() >= timeout) {
+			}
+			if (timeout > 0 && watch.getTime() >= timeout) {
 				stopDecoder();
 				onDecoderTimeout();
 			}
@@ -82,25 +78,31 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 
 	protected void stopDecoder() {
 		if (decoderThread != null && decoder.isRunning()) {
-			decoder.stopRecording();
+			decoder.stopDecoder();
 			try {
 				decoderThread.join(100);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 			decoderThread = null;
 		} else {
-			logMessage("Decoder isn't running, nothing to do...");
+			logger.logMessage("Decoder isn't running, nothing to do...");
 		}
 
 	}
 
 	protected void send(byte receiverAddress, byte command, byte[] data) {
-		IDataFrame frame = new DataFrameBuilder(receiverAddress, encoder.getNoOfChannels()).command(command).data(data)
-				.build();
-
-		encoder.setDataFrame(frame);
-		encoder.run();
+		IDataFrame frame = null;
+		try {
+			frame = new DataFrameBuilder(receiverAddress, encoder.getNoOfChannels()).command(command).data(data)
+					.build();
+		} catch (Exception e) {
+			logger.logMessage(e.getMessage());
+		}
+		if (frame != null) {
+			encoder.setDataFrame(frame);
+			encoder.run();
+		}
 	}
 
 	protected abstract void onTransmissionReceived();
@@ -112,8 +114,20 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 		try {
 			Thread.sleep(duration);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
+	}
+
+	public IDataFrame getReceivedDataFrame() {
+		return receivedDataFrame;
+	}
+
+	public ParserResult getResult() {
+		return result;
+	}
+
+	public boolean isRunning() {
+		return isRunning;
 	}
 
 }

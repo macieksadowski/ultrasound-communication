@@ -1,31 +1,24 @@
 package ultrasound.utils;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+class UltrasoundHelperTest {
 
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
+    @Test
+    void testBbinArrayFromBinStrException() throws IllegalArgumentException {
 
-@RunWith(JUnitParamsRunner.class)
-public class UltrasoundHelperTest {
-
-    @Test(expected = IllegalArgumentException.class)
-    public void binArrayFromBinStr_Exception() throws IllegalArgumentException {
-
-        UltrasoundHelper.binArrayFromBinStr("01B1");
+        assertThrows(IllegalArgumentException.class, () -> UltrasoundHelper.binArrayFromBinStr("01B1"));
     }
 
     @Test
-    public void binArrayFromBinStr() {
+    void testBinArrayFromBinStr() {
         boolean[] fiveBool = new boolean[]{false,true,false,true};
         assertArrayEquals(fiveBool,UltrasoundHelper.binArrayFromBinStr("0101"));
     }
     
     @Test
-    public void binStrFromBinArray() {
+    void testBinStrFromBinArray() {
     	String fiveBoolStr = "0101";
         boolean[] fiveBool = new boolean[]{false,true,false,true};
         assertEquals(fiveBoolStr,UltrasoundHelper.binStrFromBinArray(fiveBool));
@@ -33,29 +26,31 @@ public class UltrasoundHelperTest {
 
 
     @Test
-    public void hex2bin() {
-
-        assertEquals("0000",UltrasoundHelper.hex2bin("0"));
-        assertEquals("010011010100000101000011010010010100010101001011",UltrasoundHelper.hex2bin("4D414349454B"));
+    void testHex2bin() {
+    	assertAll(
+    		() -> assertEquals("0000",UltrasoundHelper.hex2bin("0")),
+        	() -> assertEquals("010011010100000101000011010010010100010101001011",UltrasoundHelper.hex2bin("4D414349454B"))
+        );
     }
     
     @Test
-    public void hexToByte() {
+    void testHexToByte() {
 
     	assertEquals((byte) 0xff, UltrasoundHelper.hexToByte("ff"));
     }
 
     @Test
-    public void bin2hex() {
+    void testBin2hex() {
         boolean[] fiveBinary = UltrasoundHelper.binArrayFromBinStr("0101");
-        assertEquals("5",UltrasoundHelper.bin2hex(fiveBinary));
-
         boolean[] zeroBinary = UltrasoundHelper.binArrayFromBinStr("0000");
-        assertEquals("0",UltrasoundHelper.bin2hex(zeroBinary));
+        assertAll(
+        	() -> assertEquals("5",UltrasoundHelper.bin2hex(fiveBinary)),
+        	() -> assertEquals("0",UltrasoundHelper.bin2hex(zeroBinary))
+        );
     }
 
     @Test
-    public void sumShortArrays() {
+    void testSumShortArrays() {
         short [] arrA = {
             0,
                     -700,
@@ -90,7 +85,7 @@ public class UltrasoundHelperTest {
     }
 
     @Test
-    public void multiplyArrayByFactor() {
+    void testMultiplyArrayByFactor() {
         short [] arr = {
                 32767,
                 -30273,
@@ -128,17 +123,17 @@ public class UltrasoundHelperTest {
 
 
     @Test
-    public void multiplyBooleanMatrices() {
+    void testMultiplyBooleanMatrices() {
 
         boolean[][] secondMatrix = {{false,true,true,false}};
         boolean[][] expected = {{true,true,false,false,true,true,false,false}};
-        boolean[][] actual = UltrasoundHelper.multiplyBooleanMatrices(secondMatrix, UltrasoundHelper.G);
+        boolean[][] actual = UltrasoundHelper.multiplyBooleanMatrices(secondMatrix, UltrasoundHelper.matrixG);
         assertArrayEquals(actual,expected);
 
     }
 
     @Test
-    public void encHamming() {
+    void testEncHamming() {
 
         boolean[] msg = {false,true,true,false};
         boolean[] expected = {true,true,false,false,true,true,false,false};
@@ -148,7 +143,7 @@ public class UltrasoundHelperTest {
     }
 
     @Test
-    public void secded() {
+    void testSecded() {
 
         boolean[] expected = {false,true,true,false};
         boolean[] msgEncoded = {true,true,false,false,false,true,false,false};
@@ -161,35 +156,4 @@ public class UltrasoundHelperTest {
         assertArrayEquals(actual,expected);
 
     }
-    
-    @Test
-    @Parameters(method = "parametersToTestByte2Bin")
-    public void byte2bin(byte[] given, String expectedStr) {
-    	boolean[] expected = UltrasoundHelper.binArrayFromBinStr(UltrasoundHelper.hex2bin(expectedStr));
-    	
-    	assertArrayEquals(UltrasoundHelper.byte2bin(given), expected);
-    	
-    }
-    
-    @SuppressWarnings("unused")
-	private Object[] parametersToTestByte2Bin() {
-		return new Object[] {
-			new Object[] {new byte[] { (byte) 0xFF }, "FF"},
-			new Object[] {new byte[] { (byte) 0x4D }, "4d"},
-			new Object[] {new byte[] { (byte) 0x10 }, "10"},
-			new Object[] {new byte[] { (byte) 0x37 }, "37"},
-		};
-    	
-    }
-    
-    @Test
-    @Parameters(method = "parametersToTestByte2Bin")
-    public void bin2byte(byte[] expected, String given) {
-    	boolean[] givenArr = UltrasoundHelper.binArrayFromBinStr(UltrasoundHelper.hex2bin(given));
-    	
-    	
-    	assertArrayEquals(UltrasoundHelper.bin2byte(givenArr),expected);
-    	
-    }
-
 }

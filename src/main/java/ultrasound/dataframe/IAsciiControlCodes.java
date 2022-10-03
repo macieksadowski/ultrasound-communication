@@ -1,5 +1,9 @@
 package ultrasound.dataframe;
 
+/**
+ * This interface provides byte values of all control codes defined in ASCII character encoding standard
+ * @author M. Sadowski
+ */
 public interface IAsciiControlCodes {
 
 	/**

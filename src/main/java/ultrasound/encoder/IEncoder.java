@@ -1,19 +1,9 @@
-package ultrasound;
+package ultrasound.encoder;
 
+import ultrasound.ICoder;
 import ultrasound.dataframe.IDataFrame;
 
 public interface IEncoder extends ICoder, Runnable {
-	
-	/**
-	 * Builder for new instances {@link IEncoder}
-	 */
-	public interface IEncoderBuilder extends ICoderBuilder {
-
-		public IEncoderBuilder tBreak(double tBreak);
-		
-		public IEncoderBuilder fadeLength(double fadeLength);
-
-	}
 
 	/**
 	 * Method used to start sound transmission
