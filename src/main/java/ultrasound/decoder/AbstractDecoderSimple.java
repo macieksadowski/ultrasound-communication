@@ -45,6 +45,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	 * instantiate new object of this type use {@link AbstractDecoderBuilder}
 	 * 
 	 * @param builder {@link AbstractDecoderBuilder}
+	 * @throws Exception on {@link FFT} initialization error
 	 */
 	protected AbstractDecoderSimple(AbstractDecoderBuilder builder) throws Exception {
 
@@ -137,14 +138,11 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	 * returns raw audio data samples, which contain signal to decode.
 	 *
 	 * @return short[] audio data samples
+	 * @throws IllegalStateException when Audio Recorder was not initialized
 	 */
-	protected abstract short[] getAudioSamples() throws Exception;
+	protected abstract short[] getAudioSamples() throws IllegalStateException;
 
-	/**
-	 * @throws Exception
-	 *
-	 */
-	private void decode() throws Exception {
+	private void decode() {
 
 		double[] frag = UltrasoundHelper.shortArrayToDoubleArray(recordFrag);
 
@@ -225,8 +223,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	}
 
 	/**
-	 * @param resBin
-	 * @throws Exception
+	 * @param resBinDec
 	 */
 	protected void onNewBinaryDataDecoded(boolean[] resBinDec) {
 		char[] resHex = UltrasoundHelper.bin2hex(resBinDec).toCharArray();

@@ -70,7 +70,6 @@ public abstract class AbstractDecoder extends AbstractDecoderSimple implements I
 	}
 	
 	private void onEOTReceived() {
-		endOfTransmission = true;
 		logger.logMessage("End of frame byte received");
 
 		result = new ParserResult();
@@ -85,6 +84,7 @@ public abstract class AbstractDecoder extends AbstractDecoderSimple implements I
 		} else {
 			logger.logMessage("Data frame parsing result: " + result.get().toString());
 		}
+		endOfTransmission = true;
 	}
 	
 	public ParserResult getParserResult() {

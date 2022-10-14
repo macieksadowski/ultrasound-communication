@@ -41,10 +41,10 @@ public final class UltrasoundHelper {
 	}
 
 	/**
-	 * Converts string with binary data to array of boolean binary values
+	 * Converts  array of boolean binary values to string with binary data formatted as '0' and '1'
 	 * 
-	 * @param binStr String with binary values
-	 * @return array of boolean binary values
+	 * @param binArray array of boolean binary values
+	 * @return {@code String} with binary values
 	 */
 	public static String binStrFromBinArray(boolean[] binArray) {
 		char[] binStr = new char[binArray.length];

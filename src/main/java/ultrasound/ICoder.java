@@ -14,7 +14,7 @@ public interface ICoder {
 	 * <li>{@code CoderMode#SIMPLE} - raw hex data will be send and receive</li>
 	 * <li>{@code CoderMode#DATA_FRAME} - data will be transmitted encapsulated in
 	 * frames</li>
-	 * <ul>
+	 * </ul>
 	 */
 	public enum CoderMode {
 		SIMPLE, DATA_FRAME
@@ -71,7 +71,7 @@ public interface ICoder {
 	CoderMode getMode();
 
 	/**
-	 * Returns <true> if the device is currently running
+	 * Returns {@code true} if the device is currently running
 	 * 
 	 * @return <code>boolean</code> flag of device state
 	 */

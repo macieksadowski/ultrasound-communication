@@ -108,6 +108,8 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 	 * This method should implement opening and initializing all necessary resources
 	 * used for audio playback. It will be called before the beginning of
 	 * transmission
+	 * 
+	 * @throws Exception when audio stream could not be initialized
 	 */
 	protected abstract void constructAudioStream() throws Exception;
 
