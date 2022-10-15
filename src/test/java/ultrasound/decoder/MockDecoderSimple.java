@@ -11,7 +11,6 @@ class MockDecoderSimple extends AbstractDecoderSimple {
         super(builder);
         this.audioData = builder.audioData;
         i = N;
-        this.recordFrag = new short[N];
     }
 
     @Override

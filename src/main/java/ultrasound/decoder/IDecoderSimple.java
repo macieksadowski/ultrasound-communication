@@ -19,10 +19,6 @@ public interface IDecoderSimple extends ICoder, Runnable {
 
 	int getNfft();
 
-	double[] getAmpl();
-
 	double[] getF();
-
-	double[] getT();
 
 }

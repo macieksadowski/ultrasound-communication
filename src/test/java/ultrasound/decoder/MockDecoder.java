@@ -15,7 +15,6 @@ public class MockDecoder extends AbstractDecoder implements IDecoder {
 		super(builder);
 		 this.audioData = builder.audioData;
 	     i = N;
-	     this.recordFrag = new short[N];
 	}
 	
 	@Override

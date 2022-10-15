@@ -17,23 +17,14 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	protected int nfft;
 	private final double threshold;
 	protected double deltaF;
-	private final double[] hamming;
 
+	private final double[] hamming;
 	private final FFT fft;
+	private double[] f;
 
 	private final int lowestAnalyseFreqInd;
 	private final int highestAnalyseFreqInd;
 	private final int[][] freqInd;
-
-	protected double[] f;
-	protected double[] ampl;
-
-	protected short[] recordFrag;
-	protected double[] t;
-
-	protected double[] vals;
-	protected double[] oldVals;
-	protected boolean breakInd;
 
 	protected StringBuilder receivedHexMsg;
 
@@ -60,9 +51,6 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 		this.deltaF = sampleRate / (double) nfft;
 		this.hamming = UltrasoundHelper.hamming(N);
 
-		this.vals = new double[noOfChannels];
-		this.oldVals = new double[noOfChannels];
-		this.breakInd = false;
 		this.fft = new FFT(nfft);
 
 		double lowestAnalyseFreq = firstFreq - deltaF;
@@ -99,11 +87,13 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 		startRecording();
 
+		double[] oldVals = new double[noOfChannels];
+
 		while (isRunning) {
 
 			try {
-				recordFrag = getAudioSamples();
-				decode();
+				short[] recordFrag = getAudioSamples();	
+				oldVals = decode(recordFrag, oldVals);
 
 			} catch (Exception e) {
 				logger.logMessage(e.toString());
@@ -142,7 +132,9 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	 */
 	protected abstract short[] getAudioSamples() throws IllegalStateException;
 
-	private void decode() {
+	private double[] decode(short[] recordFrag, double[] oldVals) {
+
+		double[] vals = new double[noOfChannels];
 
 		double[] frag = UltrasoundHelper.shortArrayToDoubleArray(recordFrag);
 
@@ -153,7 +145,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 		double[] x = zeroPadding(frag);
 
-		calculateFFT(x);
+		double[] ampl = calculateFFT(x);
 
 		// Iterate for every transmission's channel
 		boolean valFound = true;
@@ -161,7 +153,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 		for (int j = 0; j < noOfChannels; j++) {
 
-			int foundVal = analyseChannelForSignalPresence(j);
+			int foundVal = analyseChannelForSignalPresence(j, ampl);
 			if (foundVal != -1) {
 				vals[j] = f[foundVal];
 			} else {
@@ -169,27 +161,23 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 				valFound = false;
 				continue;
 			}
-			valChanged = checkIfFreqValuesChanged(j);
-			if (valChanged) {
-				oldVals = ArrayUtils.clone(vals);
-			}
+			valChanged = checkIfFreqValuesChanged(vals[j], oldVals[j]);
 		}
-		for (double val : vals) {
-			if (val == 0.0) {
-				breakInd = true;
-				oldVals = ArrayUtils.clone(vals);
-				break;
-			}
+
+		if (valFound && valChanged) {
+			onValuesFoundOnAllChannels(vals);
 		}
-		if (valFound && valChanged && breakInd) {
-			onValuesFoundOnAllChannels();
-		}
+		return vals;
 	}
 
-	private void onValuesFoundOnAllChannels() {
-		boolean[] resBin = convertFreqValsToBinary();
+	/**
+	 * This method is called when searched frequencies have been found on every channel
+	 * @param vals Frequency values for every transmission channel 
+	 */
+	private void onValuesFoundOnAllChannels(double[] vals) {
+		boolean[] resBin = convertFreqValsToBinary(vals);
 
-		if (resBin != null && resBin.length % noOfChannels == 0 && resBin.length % 16 == 0) {
+		if (resBin != null && resBin.length % noOfChannels == 0 && resBin.length % (2 * Byte.SIZE) == 0) {
 			sigBin = ArrayUtils.addAll(sigBin, resBin);
 			boolean[] resBinDec = decodeSecdedEncodedBinaryData(resBin);
 			sigBinDec = ArrayUtils.addAll(sigBinDec, resBinDec);
@@ -197,33 +185,35 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 				logger.logMessage("Decoded data binary: " + UltrasoundHelper.binStrFromBinArray(sigBinDec));
 				onNewBinaryDataDecoded(resBinDec);
 			}
-			breakInd = false;
 		}
 		
 	}
 
-	private int analyseChannelForSignalPresence(int j) {
+	private int analyseChannelForSignalPresence(int channelNo, double[] sig) {
 		// Analyze only in range of frequencies used by current channel
-		int fMaxInd = UltrasoundHelper.findMaxValueIndex(ampl, freqInd[j][0], freqInd[j][1] + 1);
-		if (ampl[fMaxInd] > threshold) {
+		int fMaxInd = UltrasoundHelper.findMaxValueIndex(sig, freqInd[channelNo][0], freqInd[channelNo][1] + 1);
+		if (sig[fMaxInd] > threshold) {
 			return fMaxInd;
 		}
 		return -1;
 	}
 
 	/**
-	 * Returns true if value of frequency is different from its value in previous
-	 * step
+	 * Returns true if value of frequency is different from its value from previous
+	 * iteration. 
+	 * A different value means that it is outside the range of (oldVal +- deltaF)
 	 * 
-	 * @param channelNo Number of channel to analyze
-	 * @return true if value changed on given channel
+	 * @param actVal actual value to compare
+	 * @param oldVal value from previous iteration
+	 * @return true if value changed
 	 */
-	private boolean checkIfFreqValuesChanged(int channelNo) {
-		return (vals[channelNo] < oldVals[channelNo] - deltaF || vals[channelNo] > oldVals[channelNo] + deltaF);
+	private boolean checkIfFreqValuesChanged(double actVal, double oldVal) {
+		return (actVal < oldVal - deltaF || actVal > oldVal + deltaF);
 	}
 
 	/**
-	 * @param resBinDec
+	 * This method is called when new binary data has been successfully decoded
+	 * @param resBinDec New binary data
 	 */
 	protected void onNewBinaryDataDecoded(boolean[] resBinDec) {
 		char[] resHex = UltrasoundHelper.bin2hex(resBinDec).toCharArray();
@@ -257,15 +247,19 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	}
 
 	/**
-	 * @return
+	 * Converts frequency value for every channel to binary value. 
+	 * Conversion will be done based on decoder's frequency  matrix {@link AbstractCoder#freq } 
+	 * 
+	 * @param freqVals Array of frequencies found on every channel
+	 * @return Array of binary values or {@code null} when error by conversion occurred
 	 */
-	private boolean[] convertFreqValsToBinary() {
+	private boolean[] convertFreqValsToBinary(double[] freqVals) {
 		boolean[] resBin = null;
 
 		for (int j = 0; j < noOfChannels; j++) {
-			if (vals[j] <= freq[j][0] + deltaF && vals[j] >= freq[j][0] - deltaF) {
+			if (freqVals[j] <= freq[j][0] + deltaF && freqVals[j] >= freq[j][0] - deltaF) {
 				resBin = ArrayUtils.add(resBin, false);
-			} else if (vals[j] <= freq[j][1] + deltaF && vals[j] >= freq[j][1] - deltaF) {
+			} else if (freqVals[j] <= freq[j][1] + deltaF && freqVals[j] >= freq[j][1] - deltaF) {
 				resBin = ArrayUtils.add(resBin, true);
 			} else {
 				break;
@@ -277,9 +271,9 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	/**
 	 * @param x
 	 */
-	private void calculateFFT(double[] x) {
+	private double[] calculateFFT(double[] x) {
 
-		ampl = new double[f.length];
+		double[] ampl = new double[f.length];
 		// FFT Calculation
 		double[] y = new double[this.nfft];
 		this.fft.fft(x, y);
@@ -290,6 +284,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 			int ind = lowestAnalyseFreqInd + ii;
 			ampl[ii] = x[ind] * x[ind] + y[ind] * y[ind];
 		}
+		return ampl;
 	}
 
 	/**
@@ -324,16 +319,8 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 		return nfft;
 	}
 
-	public double[] getAmpl() {
-		return ampl;
-	}
-
 	public double[] getF() {
 		return f;
-	}
-
-	public double[] getT() {
-		return t;
 	}
 
 	@Override
