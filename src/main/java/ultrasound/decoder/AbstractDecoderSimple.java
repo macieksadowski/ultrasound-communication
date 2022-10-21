@@ -161,13 +161,18 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 				valFound = false;
 				continue;
 			}
-			valChanged = checkIfFreqValuesChanged(vals[j], oldVals[j]);
+			if(checkIfFreqValuesChanged(vals[j], oldVals[j])) {
+				valChanged = true;
+			}
 		}
 
-		if (valFound && valChanged) {
-			onValuesFoundOnAllChannels(vals);
-		}
-		return vals;
+		if (valChanged) {
+			if(valFound) {
+				onValuesFoundOnAllChannels(vals);
+			}
+			return ArrayUtils.clone(vals);
+		} 
+		return oldVals;
 	}
 
 	/**
