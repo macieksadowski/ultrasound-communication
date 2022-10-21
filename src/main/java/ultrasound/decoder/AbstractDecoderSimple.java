@@ -98,7 +98,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 			} catch (Exception e) {
 				logger.logMessage(e.toString());
 				e.printStackTrace();
-				stopDecoder();
+				stop();
 				break;
 			}
 		}
@@ -114,7 +114,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 	}
 
-	public void stopDecoder() {
+	public void stop() {
 		logger.logMessage("Decoder stopped!");
 		isRunning = false;
 	}
@@ -320,7 +320,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	}
 
 	public double[] getF() {
-		return f;
+		return ArrayUtils.clone(f);
 	}
 
 	@Override

@@ -19,6 +19,16 @@ public interface ICoder {
 	public enum CoderMode {
 		SIMPLE, DATA_FRAME
 	}
+	
+	/**
+	 * Method used to start device
+	 */
+	void run();
+	
+	/**
+	 * Method used to immediately stop device.
+	 */
+	void stop();
 
 	/**
 	 * Get the sample rate used in encoder/decoder

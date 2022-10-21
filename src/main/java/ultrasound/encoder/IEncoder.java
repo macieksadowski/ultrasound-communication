@@ -6,11 +6,6 @@ import ultrasound.dataframe.IDataFrame;
 public interface IEncoder extends ICoder, Runnable {
 
 	/**
-	 * Method used to start sound transmission
-	 */
-	void run();
-
-	/**
 	 * Sets hexadecimal data to transmit. This String will be validated before transmission using method {@link AbstractEncoder#validateHexData()}
 	 * 
 	 * @param hexData hexadecimal data as String

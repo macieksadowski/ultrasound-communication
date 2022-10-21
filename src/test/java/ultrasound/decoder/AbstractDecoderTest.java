@@ -63,7 +63,7 @@ class AbstractDecoderTest {
 			pause(10);
 			if (decoderDataFrame.endOfTransmissionReceived()) {
 				receivedFrame = decoderDataFrame.getDataFrame();
-				decoderDataFrame.stopDecoder();
+				decoderDataFrame.stop();
 			}
 		} while (decoderDataFrame.isRunning());
 		
@@ -91,7 +91,7 @@ class AbstractDecoderTest {
 
 			if (watch.getTime() / 1000.0 > audioSigMockLen) {
 				watch.stop();
-				decoderSimple.stopDecoder();
+				decoderSimple.stop();
 
 				decoderThread = null;
 				break;

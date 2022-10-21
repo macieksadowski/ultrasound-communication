@@ -56,6 +56,10 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 			sines[i][1] = genTone(freq[i][1]);
 		}
 	}
+	
+	public void stop() {
+		isRunning = false;
+	}
 
 	public void run() {
 
@@ -157,6 +161,10 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 		playSound(genTone(40));
 
 		for (int i = 0; i < signalBinEncoded.length / noOfChannels; i++) {
+			
+			if(!isRunning) {
+				break;
+			}
 
 			short[] curTactSig = new short[N];
 			for (int j = 0; j < noOfChannels; j++) {

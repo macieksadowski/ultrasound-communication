@@ -13,8 +13,6 @@ public interface IDecoderSimple extends ICoder, Runnable {
 
 	void clearResult();
 
-	void stopDecoder();
-
 	String getResHex();
 
 	int getNfft();

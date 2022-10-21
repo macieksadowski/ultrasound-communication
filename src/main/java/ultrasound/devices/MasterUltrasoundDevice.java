@@ -57,10 +57,6 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 		}
 	}
 
-	public void stop() {
-		isRunning = false;
-	}
-
 	public void sendBroadcast(byte command) {
 		sendBroadcast(command, null);
 	}

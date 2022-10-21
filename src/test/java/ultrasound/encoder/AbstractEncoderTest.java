@@ -33,6 +33,7 @@ class AbstractEncoderTest {
 		
 		MockEncoderBuilder builder = new MockEncoderBuilder(sampleRate, testData.getNoOfChannels(), testData.getFirstFreq(), testData.getFreqStep());
 		builder.mode(mode);
+		builder.fadeLength(0.05);
 		encoder = builder.build();
 	}
 

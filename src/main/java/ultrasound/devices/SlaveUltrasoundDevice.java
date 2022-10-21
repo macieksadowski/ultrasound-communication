@@ -21,11 +21,6 @@ public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice {
 		}
 	}
 
-	public void stop() {
-		isRunning = false;
-		stopDecoder();
-	}
-
 	protected void onTransmissionReceived() {
 
 		switch (result.get()) {
@@ -39,6 +34,7 @@ public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice {
 				if (checkAdrResult.get() == CheckAddressResultValues.OK) {
 					send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.NAK, null);
 					logger.logMessage("Retry transmission was requested");
+					pause(700);
 				}
 				break;
 			}

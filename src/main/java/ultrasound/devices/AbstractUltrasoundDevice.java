@@ -75,10 +75,16 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 			}
 		} while (decoder.isRunning());
 	}
+	
+	public void stop() {
+		isRunning = false;
+		encoder.stop();
+		stopDecoder();
+	}
 
 	protected void stopDecoder() {
 		if (decoderThread != null && decoder.isRunning()) {
-			decoder.stopDecoder();
+			decoder.stop();
 			try {
 				decoderThread.join(100);
 			} catch (InterruptedException e) {
