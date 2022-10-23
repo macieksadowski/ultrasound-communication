@@ -28,8 +28,8 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 	protected StringBuilder receivedHexMsg;
 
-	protected boolean[] sigBin;
 	protected boolean[] sigBinDec;
+	private boolean[] resBin;
 
 	/**
 	 * Internal constructor for a new abstract encoder/decoder object. To
@@ -108,8 +108,6 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 	public void clearReceivedDataBuffers() {
 		receivedHexMsg.setLength(0);
-
-		sigBin = null;
 		sigBinDec = null;
 
 	}
@@ -159,7 +157,6 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 			} else {
 				vals[j] = 0;
 				valFound = false;
-				continue;
 			}
 			if(checkIfFreqValuesChanged(vals[j], oldVals[j])) {
 				valChanged = true;
@@ -180,18 +177,17 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	 * @param vals Frequency values for every transmission channel 
 	 */
 	private void onValuesFoundOnAllChannels(double[] vals) {
-		boolean[] resBin = convertFreqValsToBinary(vals);
-
-		if (resBin != null && resBin.length % noOfChannels == 0 && resBin.length % (2 * Byte.SIZE) == 0) {
-			sigBin = ArrayUtils.addAll(sigBin, resBin);
+		resBin = ArrayUtils.addAll(resBin, convertFreqValsToBinary(vals));
+		
+		if(resBin != null && resBin.length % noOfChannels == 0 && resBin.length % (2 * Byte.SIZE) == 0) {
 			boolean[] resBinDec = decodeSecdedEncodedBinaryData(resBin);
-			sigBinDec = ArrayUtils.addAll(sigBinDec, resBinDec);
-			if (sigBinDec != null) {
+			resBin = null;
+			if (resBinDec != null ) {
+				sigBinDec = ArrayUtils.addAll(sigBinDec, resBinDec);
 				logger.logMessage("Decoded data binary: " + UltrasoundHelper.binStrFromBinArray(sigBinDec));
 				onNewBinaryDataDecoded(resBinDec);
 			}
 		}
-		
 	}
 
 	private int analyseChannelForSignalPresence(int channelNo, double[] sig) {
@@ -242,7 +238,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 			} catch (Exception e) {
 				logger.logMessage(e.getMessage());
 				clearReceivedDataBuffers();
-				return new boolean[0];
+				return null;
 			}
 
 		} else {
