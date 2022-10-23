@@ -105,7 +105,8 @@ class AbstractDecoderTest {
 	
 	private static Stream<Arguments> factoryForTestRunSimple() {
 		return Stream.of(
-				Arguments.of("16F20000S40-6C.csv", "6c")
+				Arguments.of("16F20000S40-6C.csv", "6c"),
+				Arguments.of("4F17000S40-6C.csv", "6c")
 		);
 	}
 	

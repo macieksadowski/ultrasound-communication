@@ -19,7 +19,7 @@ public class TestData {
 	public TestData(String name, int sampleRate) throws Exception {
 		
 		
-		Pattern pattern = Pattern.compile("([0-9]{2})F([0-9]*?)S([0-9]*)");
+		Pattern pattern = Pattern.compile("([0-9]{1,2})F([0-9]*?)S([0-9]*)");
 		Matcher matcher = pattern.matcher(name);
 		if(matcher.find()) {
 			this.sampleRate = sampleRate;

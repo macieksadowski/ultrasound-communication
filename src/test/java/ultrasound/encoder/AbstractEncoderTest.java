@@ -5,6 +5,7 @@ import static org.junit.Assert.assertArrayEquals;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -15,6 +16,7 @@ import ultrasound.dataframe.DataFrame.DataFrameBuilder;
 import ultrasound.dataframe.IAsciiControlCodes;
 import ultrasound.dataframe.IDataFrame;
 import ultrasound.encoder.MockEncoder.MockEncoderBuilder;
+import ultrasound.utils.FileUtil;
 
 class AbstractEncoderTest {
 	
@@ -66,7 +68,6 @@ class AbstractEncoderTest {
 		);
 	}
 	
-	@Disabled
 	@ParameterizedTest
 	@MethodSource("factoryForTestRunSimple")
 	void testRunSimple(String testFileName, String data) {
@@ -82,8 +83,32 @@ class AbstractEncoderTest {
 	
 	private static Stream<Arguments> factoryForTestRunSimple() {
 		return Stream.of(
-				Arguments.of("16F20000S40-6C.csv", "6C")
+				Arguments.of("4F17000S40-6C.csv", "6C")
 		);
 	}
+	
+	@Disabled
+	@Test
+	void testRunForDataGeneration() {
+
+		int noOfChannels = 4;
+		int firstFreq = 17000;
+		int freqStep = 40;
+		String data = "6C";
+		
+		MockEncoderBuilder builder = new MockEncoderBuilder(sampleRate, noOfChannels, firstFreq, freqStep);
+		builder.mode(CoderMode.SIMPLE);
+		builder.fadeLength(0.05);
+		encoder = builder.build();
+		
+		encoder.setHexData(data);
+		
+		encoder.run();
+		
+		FileUtil.saveToCsvFile(noOfChannels + "F" + firstFreq + "S" + freqStep + "-" + data, encoder.getOutputBuffer());
+		
+	}
+	
+
 
 }
