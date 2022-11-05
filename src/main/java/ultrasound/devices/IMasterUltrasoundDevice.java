@@ -11,4 +11,6 @@ public interface IMasterUltrasoundDevice extends IDevice {
 	void send(byte receiverAddress, byte[] data);
 
 	void setDecoderTimeout(long timeout);
+	
+	boolean isIdle();
 }

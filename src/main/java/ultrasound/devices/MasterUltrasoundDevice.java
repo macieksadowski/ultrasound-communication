@@ -2,7 +2,7 @@ package ultrasound.devices;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import ultrasound.dataframe.IAsciiControlCodes;
+import ultrasound.dataframe.IControlCodes;
 import ultrasound.dataframe.IDataFrame;
 import ultrasound.dataframe.ParserResult.ParserResultValues;
 import ultrasound.decoder.IDecoder;
@@ -22,6 +22,8 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 
 	private actionType actionToRun;
 	private actionType runningAction;
+	
+	private boolean idle;
 
 	public MasterUltrasoundDevice(IEncoder encoder, IDecoder decoder) {
 		super(IDataFrame.MASTER_ADDRESS, encoder, decoder);
@@ -32,6 +34,7 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 
 	public void run() {
 		isRunning = true;
+		idle = true;
 
 		while (isRunning) {
 
@@ -42,18 +45,22 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 
 			switch (runningAction) {
 				case SEND:
+					idle = false;
 					super.send(receiverAddress, command, data);
 					receive(decoderTimeout);
 					break;
 				case SEND_BROADCAST:
+					idle = false;
 					super.send(receiverAddress, command, data);
 					break;
 				case NONE:
+					idle = true;
+					break;
 				default:
 					break;
 			}
 			runningAction = actionType.NONE;
-			pause(50);
+			pause(50, null);
 		}
 	}
 
@@ -62,7 +69,7 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 	}
 
 	public void sendBroadcast(byte[] data) {
-		sendBroadcast(IAsciiControlCodes.STX, data);
+		sendBroadcast(IControlCodes.STX, data);
 	}
 
 	public void sendBroadcast(byte command, byte[] data) {
@@ -78,7 +85,7 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 	}
 
 	public void send(byte receiverAddress, byte[] data) {
-		send(receiverAddress, IAsciiControlCodes.STX, data);
+		send(receiverAddress, IControlCodes.STX, data);
 	}
 
 	@Override
@@ -98,13 +105,17 @@ public class MasterUltrasoundDevice extends AbstractUltrasoundDevice implements 
 	public void setDecoderTimeout(long timeout) {
 		this.decoderTimeout = timeout;
 	}
+	
+	public boolean isIdle() {
+		return idle;
+	}
 
 	@Override
 	protected void onTransmissionReceived() {
 
 		if (receivedDataFrame != null) {
 			if (result.get() == ParserResultValues.PARSING_OK
-					&& receivedDataFrame.getCommand() == IAsciiControlCodes.ACK) {
+					&& receivedDataFrame.getCommand() == IControlCodes.ACK) {
 				logger.logMessage("Transmission receipt acknowledged");
 			} else {
 				logger.logMessage("Retry transmission was requested");
