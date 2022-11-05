@@ -13,7 +13,7 @@ public class ControlCodes {
 	@SuppressWarnings("deprecation")
 	public static String getCodeNameByValue(byte value) {
 
-		for (Field f : IControlCodes.class.getDeclaredFields()) {
+		for (Field f : IControlCodes.class.getFields()) {
 			try {
 				f.setAccessible(true);
 				if (f.isAccessible()) {
@@ -33,7 +33,7 @@ public class ControlCodes {
 
 	public static Byte getCodeByName(String name) {
 		try {
-			Field field = IControlCodes.class.getDeclaredField(name);
+			Field field = IControlCodes.class.getField(name);
 			field.setAccessible(true);
 			return field.getByte(null);
 		} catch (NoSuchFieldException e) {
@@ -47,7 +47,7 @@ public class ControlCodes {
 	@SuppressWarnings("deprecation")
 	public static Map<String, Byte> getAsMap() {
 		HashMap<String, Byte> map = new HashMap<>();
-		for (Field f : ControlCodes.class.getDeclaredFields()) {
+		for (Field f : ControlCodes.class.getFields()) {
 			try {
 				f.setAccessible(true);
 				if (f.isAccessible()) {
