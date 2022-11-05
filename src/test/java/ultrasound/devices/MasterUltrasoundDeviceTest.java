@@ -44,10 +44,13 @@ class MasterUltrasoundDeviceTest {
 	
 	private IDataFrame ackFrame;
 	
+	private StopWatch watch = new StopWatch();
+	
 	@BeforeEach
 	void init() throws Exception {
 		master = new MasterUltrasoundDevice(encoder, decoder);
 		masterThread = new Thread(master);
+		masterThread.setName("MASTER THREAD");
 		when(encoder.getNoOfChannels()).thenReturn(NO_OF_CHANNELS);
 		
 		ackFrame = new DataFrame.DataFrameBuilder(NO_OF_CHANNELS).receiverAddress(IDataFrame.MASTER_ADDRESS).command(IAsciiControlCodes.ACK).build();
@@ -61,8 +64,12 @@ class MasterUltrasoundDeviceTest {
 			
 			master.sendBroadcast(cmd);
 			masterThread.start();
-			masterThread.join(100);
-			master.stop();
+			
+			watch.start();
+			do {
+				Thread.sleep(10);
+			} while (watch.getTime(TimeUnit.SECONDS) < 2);
+			watch.stop();
 			
 			verify(encoder).run();
 		}
@@ -73,8 +80,12 @@ class MasterUltrasoundDeviceTest {
 			
 			master.sendBroadcast(data);
 			masterThread.start();
-			masterThread.join(100);
-			master.stop();
+			
+			watch.start();
+			do {
+				Thread.sleep(10);
+			} while (watch.getTime(TimeUnit.SECONDS) < 2);
+			watch.stop();
 			
 			verify(encoder).run();
 		}
@@ -104,8 +115,6 @@ class MasterUltrasoundDeviceTest {
 			do {
 				Thread.sleep(10);
 			} while (master.getResult() == null);
-			masterThread.join(1000);
-			master.stop();
 			
 			verify(encoder).run();
 			verify(decoder).run();
@@ -128,14 +137,11 @@ class MasterUltrasoundDeviceTest {
 			
 			master.send(receiverAdr, cmd);
 			masterThread.start();
-			StopWatch watch = new StopWatch();
 			watch.start();
 			do {
 				Thread.sleep(10);
 			} while (watch.getTime(TimeUnit.SECONDS) < 10);
 			watch.stop();
-			masterThread.join(1000);
-			master.stop();
 			
 			verify(encoder, times(2)).run();
 			verify(decoder, times(2)).run();
@@ -148,7 +154,15 @@ class MasterUltrasoundDeviceTest {
 	
 	@AfterEach
 	void tearDown() {
-		masterThread.interrupt();
+		master.stop();
+		try {
+			masterThread.join(100);
+		} catch (InterruptedException e) {
+			masterThread.interrupt();
+		}
+		masterThread = null;
+		
+		watch.reset();
 	}
 
 }
