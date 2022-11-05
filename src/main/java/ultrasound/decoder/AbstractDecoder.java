@@ -2,12 +2,10 @@ package ultrasound.decoder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import ultrasound.dataframe.CheckAddressResult;
-import ultrasound.dataframe.DataFrame;
 import ultrasound.dataframe.DataFrameHelper;
-import ultrasound.dataframe.IAsciiControlCodes;
+import ultrasound.dataframe.IControlCodes;
 import ultrasound.dataframe.ParserResult;
 import ultrasound.dataframe.ParserResult.ParserResultValues;
 import ultrasound.utils.UltrasoundHelper;
@@ -22,7 +20,6 @@ public abstract class AbstractDecoder extends AbstractDecoderSimple implements I
 	private ParserResult result;
 	private CheckAddressResult checkAdrResult;
 
-	protected ArrayList<DataFrame> dataFrames;
 	protected Byte deviceAddress;
 	
 	private boolean endOfTransmission;
@@ -31,8 +28,6 @@ public abstract class AbstractDecoder extends AbstractDecoderSimple implements I
 		super(builder);
 		
 		this.resByte = new ByteArrayOutputStream();
-		
-		this.dataFrames = new ArrayList<>();
 	}
 	
 	protected abstract void onDataFrameSuccessfullyReceived();
@@ -62,7 +57,7 @@ public abstract class AbstractDecoder extends AbstractDecoderSimple implements I
 			logger.logMessage(e.getMessage());
 		}
 		for (int i = 0; i < res.length; i++) {
-			if (res[i] == IAsciiControlCodes.EOT) {
+			if (res[i] == IControlCodes.EOT) {
 				onEOTReceived();
 				clearReceivedDataBuffers();
 			}

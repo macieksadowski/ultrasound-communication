@@ -9,7 +9,6 @@ public class MockDecoder extends AbstractDecoder implements IDecoder {
 	
     private short[] audioData;
     private int i;
-
 	
 	protected MockDecoder(MockDecoderBuilder builder) throws Exception {
 		super(builder);

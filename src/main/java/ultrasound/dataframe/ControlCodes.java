@@ -13,7 +13,7 @@ public class ControlCodes {
 	@SuppressWarnings("deprecation")
 	public static String getCodeNameByValue(byte value) {
 
-		for (Field f : IAsciiControlCodes.class.getDeclaredFields()) {
+		for (Field f : IControlCodes.class.getDeclaredFields()) {
 			try {
 				f.setAccessible(true);
 				if (f.isAccessible()) {
@@ -33,7 +33,7 @@ public class ControlCodes {
 
 	public static Byte getCodeByName(String name) {
 		try {
-			Field field = IAsciiControlCodes.class.getDeclaredField(name);
+			Field field = IControlCodes.class.getDeclaredField(name);
 			field.setAccessible(true);
 			return field.getByte(null);
 		} catch (NoSuchFieldException e) {

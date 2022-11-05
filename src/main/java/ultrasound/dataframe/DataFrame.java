@@ -70,14 +70,14 @@ public final class DataFrame implements IDataFrame {
 
 		this.outputStream = new ByteArrayOutputStream();
 
-		outputStream.write(IAsciiControlCodes.SOH);
+		outputStream.write(IControlCodes.SOH);
 
 		this.receiverAddress = builder.receiverAddress;
 		outputStream.write(receiverAddress);
 
 		this.command = builder.command;
 		if (command == null) {
-			command = IAsciiControlCodes.STX;
+			command = IControlCodes.STX;
 		}
 		outputStream.write(command);
 
@@ -85,13 +85,13 @@ public final class DataFrame implements IDataFrame {
 		if (data != null) {
 			this.data = padData(builder.noOfTransmissionChannels);
 			outputStream.write(data);
-			outputStream.write(IAsciiControlCodes.ETX);
+			outputStream.write(IControlCodes.ETX);
 		}
 
 		this.checksum = calculateChecksum();
 		outputStream.write(checksum);
 
-		outputStream.write(IAsciiControlCodes.EOT);
+		outputStream.write(IControlCodes.EOT);
 
 	}
 
@@ -139,7 +139,7 @@ public final class DataFrame implements IDataFrame {
 			if (command == null) {
 				throw new NullPointerException("Data frame must contain a command!");
 			} 
-			if (command == IAsciiControlCodes.STX && (data == null || data.length == 0)) {
+			if (command == IControlCodes.STX && (data == null || data.length == 0)) {
 				throw new IllegalArgumentException("Start of text command given but no text!");
 			}
 			if (data != null && data.length > MAX_MESSAGE_SIZE) {
