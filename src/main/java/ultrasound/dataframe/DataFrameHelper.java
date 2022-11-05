@@ -21,37 +21,39 @@ public class DataFrameHelper {
 		if (byteArr.length >= DataFrame.MIN_DATA_FRAME_LENGTH_IN_BYTES) {
 
 			result.set(ParserResultValues.START_BYTE_NOT_FOUND);
-			boolean startByteFound = byteArr[0] == IAsciiControlCodes.SOH;
+			int pos = 0;
+			boolean startByteFound = byteArr[pos] == IControlCodes.SOH;
 			if (startByteFound) {
-				byte address = byteArr[1];
+				pos++;
+				byte address = byteArr[pos];
 				checkAddressResult.set(checkAddress(byteArr, deviceAddress));
 				if (checkAddressResult.get() == CheckAddressResultValues.OK
 						|| checkAddressResult.get() == CheckAddressResultValues.BROADCAST) {
-
+					
+					pos++;
 					DataFrame.DataFrameBuilder builder = new DataFrame.DataFrameBuilder(address, noOfChannels);
-
-					byte command = byteArr[2];
+					byte command = byteArr[pos];
 					builder.command(command);
 
 					// Frame with command should always have minimum length!
-					if (command != IAsciiControlCodes.STX
+					if (command != IControlCodes.STX
 							&& byteArr.length != DataFrame.MIN_DATA_FRAME_LENGTH_IN_BYTES) {
 						result.set(ParserResultValues.INCORRECT_FRAME_LENGTH);
 						return frame;
 					}
 
-					int pos = 3;
+					pos++;
 					ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
-					if (command == IAsciiControlCodes.STX) {
+					if (command == IControlCodes.STX) {
 
 						for (; pos < byteArr.length; pos++) {
-							if (byteArr[pos] == IAsciiControlCodes.ETX)
+							if (byteArr[pos] == IControlCodes.ETX)
 								break;
 							dataStr.write(byteArr[pos]);
 						}
 						builder.data(dataStr.toByteArray());
 					}
-					byte checksum = byteArr[byteArr.length - 2];
+					byte checksum = byteArr[pos];
 
 					try {
 						frame = builder.build();
