@@ -10,17 +10,17 @@ class MockDecoderSimple extends AbstractDecoderSimple {
     protected MockDecoderSimple(MockDecoderBuilder builder) throws Exception {
         super(builder);
         this.audioData = builder.audioData;
-        i = N;
+        i = 0;
     }
 
     @Override
     public short[] getAudioSamples() {
 
-        short[] frag = new short[N];
-        if (i < audioData.length)
-            frag = Arrays.copyOfRange(this.audioData, i - N, i);
-        i += N;
-        return frag;
+        if (i < audioData.length) {
+        	i += N;
+            return Arrays.copyOfRange(this.audioData, i - N, i);
+        }
+        return new short[0];
 
     }
 

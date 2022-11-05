@@ -43,7 +43,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 			this.tBreak = builder.tBreak;
 		}
 
-		this.fadeLength = 0.05;
+		this.fadeLength = 0.2 * tOnePulse;
 		if (builder.fadeLength != 0) {
 			this.fadeLength = builder.fadeLength;
 		}
@@ -88,6 +88,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 			logger.logMessage("Hex message: " + getHexMessageString());
 			logger.logMessage("Bandwidth: " + freq[0][0] + "Hz - " + freq[noOfChannels - 1][1] + "Hz");
 			logger.logMessage("Speed rate: " + Math.floor(noOfChannels / (tOnePulse + tBreak)) + "b/s");
+			logger.logMessage("tBreak: " + tBreak + "s");
 
 		} catch (Exception e) {
 			e.printStackTrace();

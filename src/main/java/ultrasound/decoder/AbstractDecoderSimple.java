@@ -93,7 +93,9 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 			try {
 				short[] recordFrag = getAudioSamples();	
-				oldVals = decode(recordFrag, oldVals);
+				if(!ArrayUtils.isEmpty(recordFrag)) {
+					oldVals = decode(recordFrag, oldVals);
+				}
 
 			} catch (Exception e) {
 				logger.logMessage(e.toString());
