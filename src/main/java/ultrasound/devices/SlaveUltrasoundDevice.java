@@ -3,7 +3,7 @@ package ultrasound.devices;
 import ultrasound.dataframe.CheckAddressResult.CheckAddressResultValues;
 import ultrasound.decoder.IDecoder;
 import ultrasound.encoder.IEncoder;
-import ultrasound.dataframe.IAsciiControlCodes;
+import ultrasound.dataframe.IControlCodes;
 import ultrasound.dataframe.IDataFrame;
 
 public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice {
@@ -32,22 +32,21 @@ public class SlaveUltrasoundDevice extends AbstractUltrasoundDevice {
 				break;
 			default:
 				if (checkAdrResult.get() == CheckAddressResultValues.OK) {
-					send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.NAK, null);
+					send(IDataFrame.MASTER_ADDRESS, IControlCodes.NAK, null);
 					logger.logMessage("Retry transmission was requested");
-					pause(700);
 				}
 				break;
 			}
 	}
 
 	private void onParsingOk() {
-		if (receivedDataFrame.getCommand() == IAsciiControlCodes.STX) {
+		if (receivedDataFrame.getCommand() == IControlCodes.STX) {
 			handleData(receivedDataFrame.getData());
 		} else {
 			handleCommand(receivedDataFrame.getCommand());
 		}
 		if (checkAdrResult.get() == CheckAddressResultValues.OK) {
-			send(IDataFrame.MASTER_ADDRESS, IAsciiControlCodes.ACK, null);
+			send(IDataFrame.MASTER_ADDRESS, IControlCodes.ACK, null);
 			logger.logMessage("Acknowledgment of receipt of message has been sent");
 		}
 	}

@@ -58,16 +58,16 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 		decoderThread.setName("Device Decoder");
 		decoderThread.start();
 		do {
-			pause(10);
+			pause(10, null);
 			if (decoder.endOfTransmissionReceived()) {
 				result = decoder.getParserResult();
 				checkAdrResult = decoder.getCheckAddressParserResult();
 				receivedDataFrame = decoder.getDataFrame();
 				decoder.clearResult();
 				stopDecoder();
-				logger.logMessage("PAUSE");
-				pause(700);
+				pause(1000, "Wait to perform action onTransmissionReceived");
 				onTransmissionReceived();
+				pause(1000, "Wait after responsing to transmission");
 			}
 			if (timeout > 0 && watch.getTime() >= timeout) {
 				stopDecoder();
@@ -88,7 +88,7 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 			try {
 				decoderThread.join(100);
 			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				decoderThread.interrupt();
 			}
 			decoderThread = null;
 		} else {
@@ -115,11 +115,19 @@ public abstract class AbstractUltrasoundDevice implements IDevice {
 
 	protected abstract void onDecoderTimeout();
 
-	protected void pause(long duration) {
+	protected void pause(long duration, String msg) {
 
 		try {
+			if(msg != null && !msg.isEmpty()) {
+				logger.logMessage("Pause " + duration + "ms: " + msg);
+				logger.logMessage("Thread: " + Thread.currentThread().getName());
+			}
 			Thread.sleep(duration);
+			if(msg != null && !msg.isEmpty()) {
+				logger.logMessage("Pause ended");
+			}
 		} catch (InterruptedException e) {
+			logger.logMessage("PAUSE BREAK: " + e.getLocalizedMessage());
 			Thread.currentThread().interrupt();
 		}
 	}
