@@ -46,9 +46,11 @@ public class DataFrameHelper {
 					ByteArrayOutputStream dataStr = new ByteArrayOutputStream();
 					if (command == IControlCodes.STX) {
 
-						for (; pos < byteArr.length; pos++) {
-							if (byteArr[pos] == IControlCodes.ETX)
+						for (; pos < byteArr.length; ++pos) {
+							if (byteArr[pos] == IControlCodes.ETX) {
+								pos++;
 								break;
+							}
 							dataStr.write(byteArr[pos]);
 						}
 						builder.data(dataStr.toByteArray());

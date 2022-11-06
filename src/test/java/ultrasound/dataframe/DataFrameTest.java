@@ -76,6 +76,14 @@ public class DataFrameTest {
 			DataFrameHelper.parseDataFrame(given, noOfChannels, parserResult, (byte) 0x01, checkAdrRes);
 			assertEquals(expectedParserResult, parserResult.get());
 		}
+		
+		@Test
+		void testTextFrame() {
+			byte[] given = str2byte("000000011111111100000010011000010110110001100001000000110000011100000100");
+			ParserResultValues expeParserResult = ParserResultValues.PARSING_OK;
+			DataFrameHelper.parseDataFrame(given, noOfChannels, parserResult, (byte) 0x00, checkAdrRes);
+			assertEquals(expeParserResult, parserResult.get());
+		}
 	}
 	
 	
