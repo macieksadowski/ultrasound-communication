@@ -30,6 +30,8 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 
 	protected boolean[] sigBinDec;
 	private boolean[] resBin;
+	
+	private double tempSigLevel;
 
 	/**
 	 * Internal constructor for a new abstract encoder/decoder object. To
@@ -47,7 +49,8 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 		this.nfft = builder.nfft;
 		this.threshold = builder.threshold;
 
-		this.N = (int) Math.ceil(tOnePulse * sampleRate);
+		//this.N = (int) Math.ceil(tOnePulse * sampleRate);
+		this.N = nfft;
 		this.deltaF = sampleRate / (double) nfft;
 		this.hamming = UltrasoundHelper.hamming(N);
 
@@ -164,9 +167,14 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 				valChanged = true;
 			}
 		}
+		if(valFound) {
+			//logger.logMessage("FOUND");
+		}
 
 		if (valChanged) {
 			if(valFound) {
+				//logger.logMessage("SIG LEVEL: " + tempSigLevel);
+				//logger.logMessage(ArrayUtils.toString(vals));
 				onValuesFoundOnAllChannels(vals);
 			}
 			return ArrayUtils.clone(vals);
@@ -179,8 +187,11 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	 * @param vals Frequency values for every transmission channel 
 	 */
 	private void onValuesFoundOnAllChannels(double[] vals) {
-		resBin = ArrayUtils.addAll(resBin, convertFreqValsToBinary(vals));
-		
+		boolean[] newBinVals = convertFreqValsToBinary(vals);
+		resBin = ArrayUtils.addAll(resBin, newBinVals);
+		if(newBinVals != null) {
+			logger.logMessage(UltrasoundHelper.binStrFromBinArray(newBinVals));
+		}
 		if(resBin != null && resBin.length % noOfChannels == 0 && resBin.length % (2 * Byte.SIZE) == 0) {
 			boolean[] resBinDec = decodeSecdedEncodedBinaryData(resBin);
 			resBin = null;
@@ -195,6 +206,7 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 	private int analyseChannelForSignalPresence(int channelNo, double[] sig) {
 		// Analyze only in range of frequencies used by current channel
 		int fMaxInd = UltrasoundHelper.findMaxValueIndex(sig, freqInd[channelNo][0], freqInd[channelNo][1] + 1);
+		tempSigLevel = sig[fMaxInd];
 		if (sig[fMaxInd] > threshold) {
 			return fMaxInd;
 		}
@@ -265,7 +277,8 @@ public abstract class AbstractDecoderSimple extends AbstractCoder implements IDe
 			} else if (freqVals[j] <= freq[j][1] + deltaF && freqVals[j] >= freq[j][1] - deltaF) {
 				resBin = ArrayUtils.add(resBin, true);
 			} else {
-				break;
+				//logger.logMessage("Could not detect on channel " + j);
+				return new boolean[0];
 			}
 		}
 		return resBin;

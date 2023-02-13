@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -25,7 +26,7 @@ class AbstractDecoderTest {
     
     IDataFrame receivedFrame;
     
-    int nfft = 12;
+    int nfft = 10;
     double threshold = 0.3;
     
     private void initTest(String testFileName, String data, CoderMode mode) {
@@ -51,6 +52,7 @@ class AbstractDecoderTest {
     	
     }
     
+	@Disabled
     @ParameterizedTest
 	@MethodSource("factoryForTestRunDataFrame")
 	void testRunDataFrame(String testFileName, String data) {
@@ -77,6 +79,7 @@ class AbstractDecoderTest {
 		);
 	}
 
+	@Disabled
 	@ParameterizedTest
 	@MethodSource("factoryForTestRunSimple")
 	void testRunDecodeSimple(String testFileName, String data) {

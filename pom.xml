@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>pl.ms</groupId>
 	<artifactId>abstract</artifactId>
-	<version>1.4.2</version>
+	<version>1.4.3</version>
 	<name>Abstract and helper classes for ultrasound project</name>
 	<dependencies>	
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->

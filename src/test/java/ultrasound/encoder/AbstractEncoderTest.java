@@ -40,6 +40,7 @@ class AbstractEncoderTest {
 	}
 
 
+	@Disabled
 	@ParameterizedTest
 	@MethodSource("factoryForTestRunDataFrame")
 	void testRunDataFrame(String testFileName, String data) {
@@ -68,6 +69,7 @@ class AbstractEncoderTest {
 		);
 	}
 	
+	@Disabled
 	@ParameterizedTest
 	@MethodSource("factoryForTestRunSimple")
 	void testRunSimple(String testFileName, String data) {

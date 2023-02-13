@@ -43,7 +43,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 			this.tBreak = builder.tBreak;
 		}
 
-		this.fadeLength = 0.2 * tOnePulse;
+		this.fadeLength = 0.4 * tOnePulse;
 		if (builder.fadeLength != 0) {
 			this.fadeLength = builder.fadeLength;
 		}
@@ -159,7 +159,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 		// Soundfile generation
 		int bytePos = 0;
 
-		playSound(genTone(40));
+		//playSound(genTone(40));
 
 		for (int i = 0; i < signalBinEncoded.length / noOfChannels; i++) {
 			
@@ -179,7 +179,7 @@ public abstract class AbstractEncoder extends AbstractCoder implements IEncoder 
 			playSound(curTactSig);
 
 		}
-		playSound(genTone(40));
+		//playSound(genTone(40));
 		isRunning = false;
 	}
 	
